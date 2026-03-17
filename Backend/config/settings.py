@@ -4,7 +4,11 @@ Reads .env once at startup, validates every value with Pydantic.
 Any module that needs a config value imports: from config.settings import settings
 """
 
+from pathlib import Path
 from pydantic_settings import BaseSettings
+
+# Always points to Backend/.env regardless of where Python is run from
+_ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -62,7 +66,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"             # DEBUG | INFO | WARNING | ERROR
 
     class Config:
-        env_file = ".env"
+        env_file = _ENV_FILE
         env_file_encoding = "utf-8"
         extra = "ignore"                # ignore unknown keys in .env
 

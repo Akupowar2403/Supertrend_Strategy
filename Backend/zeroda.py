@@ -11,7 +11,7 @@ import pyotp
 from pathlib import Path
 from datetime import datetime
 
-from kiteconnect import KiteConnect, KiteTicker
+from kiteconnect import KiteConnect
 from kiteconnect.exceptions import TokenException
 from dotenv import load_dotenv
 
@@ -31,7 +31,7 @@ SESSION_FILE = Path(__file__).parent / "session.json"
 kite = KiteConnect(api_key=API_KEY)
 
 # ── Ticker state ──────────────────────────────────────────────────────────────
-_ticker: KiteTicker | None = None
+_ticker = None  # KiteTicker — imported lazily inside init_ticker()
 _ticker_connected: bool    = False
 _subscribed_tokens: list   = []
 _latest_ticks: dict        = {}
@@ -202,6 +202,7 @@ def init_ticker(access_token: str) -> None:
         except Exception:
             pass
 
+    from kiteconnect import KiteTicker
     _ticker = KiteTicker(API_KEY, access_token)
 
     def on_connect(ws, response):
