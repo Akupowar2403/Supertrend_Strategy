@@ -6,6 +6,9 @@ FastAPI entry point — Zerodha OAuth login, DB-backed session, KiteTicker.
 import logging
 from contextlib import asynccontextmanager
 
+import pytz
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -20,12 +23,65 @@ from broker.instruments import refresh_instruments
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
 log = logging.getLogger(__name__)
 
+IST = pytz.timezone("Asia/Kolkata")
+
+
+# ── Daily 8:30 AM IST job — auto-login + refresh instruments + reconnect ticker
+
+async def daily_autologin():
+    """
+    Runs every day at 8:30 AM IST (45 min before market opens at 9:15 AM).
+    1. TOTP auto-login for all active accounts → fresh access_token saved to DB.
+    2. Refresh instruments from Zerodha → update instruments table.
+    3. Reconnect KiteTicker with new access_token.
+    """
+    log.info("Scheduler: Daily auto-login starting (8:30 AM IST)...")
+    try:
+        async with async_session() as db:
+            # Step 1: TOTP auto-login — gets fresh access_token, saves to DB
+            sessions = await load_and_autologin_all(db)
+            if not sessions:
+                log.error("Scheduler: Auto-login failed — no accounts logged in")
+                return
+            access_token = next(iter(sessions.values()))
+            log.info("Scheduler: Auto-login successful — %d account(s)", len(sessions))
+
+            # Step 2: Refresh instruments
+            try:
+                total = await refresh_instruments(zeroda.kite, db)
+                log.info("Scheduler: %d instruments refreshed", total)
+            except Exception as exc:
+                log.error("Scheduler: Instrument refresh failed: %s", exc)
+
+        # Step 3: Reconnect KiteTicker with fresh token
+        try:
+            zeroda.init_ticker(access_token)
+            log.info("Scheduler: KiteTicker reconnected with fresh token")
+        except Exception as exc:
+            log.error("Scheduler: Ticker reconnect failed: %s", exc)
+
+    except Exception as exc:
+        log.error("Scheduler: daily_autologin error: %s", exc)
+
 
 # ── Startup: DB init → verify/auto-login → refresh instruments → ticker ──────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+
+    # Start scheduler — daily auto-login at 8:30 AM IST
+    scheduler = AsyncIOScheduler(timezone=IST)
+    scheduler.add_job(
+        daily_autologin,
+        trigger=CronTrigger(hour=8, minute=30, timezone=IST),
+        id="daily_autologin",
+        name="Daily Zerodha auto-login at 8:30 AM IST",
+        replace_existing=True,
+    )
+    scheduler.start()
+    log.info("Scheduler: Daily auto-login scheduled at 08:30 AM IST")
+
     try:
         async with async_session() as db:
             # Step 1: Check for an existing valid token in DB
@@ -74,7 +130,11 @@ async def lifespan(app: FastAPI):
 
     except Exception as exc:
         log.error("Startup error: %s", exc)
+
     yield
+
+    scheduler.shutdown()
+    log.info("Scheduler: stopped")
 
 
 app = FastAPI(title="SWTS", lifespan=lifespan)
