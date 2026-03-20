@@ -63,7 +63,8 @@ def check(
         return FIXED_SL
 
     # ── 3. Trailing Stop Loss ─────────────────────────────────────────────────
-    if settings.trailing_sl:
+    # Only activates after position moves into profit (peak > entry)
+    if settings.trailing_sl and peak_price > entry_price:
         trailing_level = peak_price - settings.trail_value
         if current_price <= trailing_level:
             return TRAILING_SL

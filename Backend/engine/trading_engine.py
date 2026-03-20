@@ -275,35 +275,18 @@ class TradingEngine:
             "new_candle": new_candle,
         })
 
-        # Signal + exit logic only on confirmed candle close
-        if not new_candle or len(df) < 2:
-            return
-
+        # Position update + exit checks — every tick
         positions   = self.broker.get_positions()
         in_position = bool(positions)
 
-        if not in_position:
-            signal = sig.get_signal(df)
-            self.last_signal = signal
-
-            if signal == "BUY" and self.state == EngineState.RUNNING:
-                log.info("[ENGINE] BUY signal — %s qty=%d @ %.2f", self.symbol, self.qty, close)
-                emit_sync("signal:buy", {"symbol": self.symbol, "price": close, "time": ts})
-                order_id = self.broker.place_order(
-                    symbol=self.symbol, token=self.instrument_token,
-                    qty=self.qty, transaction_type="BUY",
-                    product="MIS", order_type="MARKET",
-                )
-                emit_sync("order:placed", {
-                    "type": "BUY", "symbol": self.symbol,
-                    "qty": self.qty, "price": close, "order_id": order_id,
-                })
-
-        else:
+        if in_position:
             position = positions[0]
 
             if hasattr(self.broker, "update_peak_price"):
                 self.broker.update_peak_price(close)
+
+            # Refresh position after peak update
+            position = self.broker.get_positions()[0]
 
             emit_sync("position:update", {
                 "symbol":         position.get("symbol", self.symbol),
@@ -316,6 +299,7 @@ class TradingEngine:
                 ),
             })
 
+            # Exit checks — every tick (SL/Target/Session/ST Red fire immediately)
             if "peak_price" not in position:
                 position["peak_price"] = position.get("entry_price", close)
 
@@ -367,6 +351,28 @@ class TradingEngine:
                     "interval":         self.interval,
                     "entry_time":       position.get("entry_time"),
                     "exit_time":        None,
+                })
+                return   # position closed — skip signal check this tick
+
+        # BUY signal check — only on confirmed candle close
+        if not new_candle or len(df) < 2:
+            return
+
+        if not in_position:
+            signal = sig.get_signal(df)
+            self.last_signal = signal
+
+            if signal == "BUY" and self.state == EngineState.RUNNING:
+                log.info("[ENGINE] BUY signal — %s qty=%d @ %.2f", self.symbol, self.qty, close)
+                emit_sync("signal:buy", {"symbol": self.symbol, "price": close, "time": ts})
+                order_id = self.broker.place_order(
+                    symbol=self.symbol, token=self.instrument_token,
+                    qty=self.qty, transaction_type="BUY",
+                    product="MIS", order_type="MARKET",
+                )
+                emit_sync("order:placed", {
+                    "type": "BUY", "symbol": self.symbol,
+                    "qty": self.qty, "price": close, "order_id": order_id,
                 })
 
     # ── Exit all positions (called on engine stop) ─────────────────────────────

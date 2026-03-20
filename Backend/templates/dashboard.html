@@ -582,6 +582,42 @@
   .fs-val.profit { color: var(--green); }
   .fs-val.loss   { color: var(--red); }
 
+  /* ── Portfolio Panel ── */
+  .port-tabs {
+    display: flex; gap: 6px; margin-bottom: 14px;
+  }
+  .port-tab-btn {
+    padding: 7px 20px;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 7px; color: var(--text2);
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .port-tab-btn.active {
+    background: var(--blue-bg); border-color: var(--blue-bdr); color: var(--blue);
+  }
+  .port-refresh-btn {
+    margin-left: auto; background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text2); padding: 3px 10px; border-radius: 6px;
+    font-size: 11px; cursor: pointer;
+  }
+  .port-table-wrap {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .port-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .port-table th {
+    padding: 9px 14px; text-align: left;
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text2); background: var(--bg3); border-bottom: 1px solid var(--border);
+  }
+  .port-table td { padding: 9px 14px; border-bottom: 1px solid var(--bg3); color: var(--text); }
+  .port-table tr:last-child td { border-bottom: none; }
+  .port-table tr:hover td { background: var(--bg3); }
+  .port-empty { padding: 28px; text-align: center; color: var(--text3); font-size: 13px; }
+  .pnl-pos { color: var(--green); }
+  .pnl-neg { color: var(--red); }
+
   /* ── FT Order Log ── */
   .ft-log-wrap {
     background: var(--bg2); border: 1px solid var(--border);
@@ -823,6 +859,65 @@
               <div class="ps-lbl">Unrealized P&amp;L</div>
               <div class="ps-val" id="posUPnL">—</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Portfolio (shown only in Live mode) -->
+      <div id="portfolioPanel" style="display:none;">
+        <div class="section-title">
+          💼 Portfolio
+          <button class="port-refresh-btn" id="btnRefreshPort">↻ Refresh</button>
+        </div>
+        <div class="port-tabs">
+          <button class="port-tab-btn active" id="tabHoldings">Holdings</button>
+          <button class="port-tab-btn"        id="tabPositions">Positions</button>
+        </div>
+
+        <!-- Holdings table -->
+        <div id="holdingsContent">
+          <div class="port-table-wrap">
+            <table class="port-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Exchange</th>
+                  <th>Qty</th>
+                  <th>Avg Price</th>
+                  <th>Last Price</th>
+                  <th>Invested</th>
+                  <th>Current</th>
+                  <th>P&amp;L</th>
+                  <th>Day Chg%</th>
+                </tr>
+              </thead>
+              <tbody id="holdingsBody">
+                <tr><td colspan="9" class="port-empty">Click Refresh to load holdings</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Positions table -->
+        <div id="positionsContent" style="display:none;">
+          <div class="port-table-wrap">
+            <table class="port-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Exchange</th>
+                  <th>Qty</th>
+                  <th>Avg Price</th>
+                  <th>Last Price</th>
+                  <th>P&amp;L</th>
+                  <th>M2M</th>
+                  <th>Product</th>
+                </tr>
+              </thead>
+              <tbody id="positionsBody">
+                <tr><td colspan="8" class="port-empty">Click Refresh to load positions</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1117,7 +1212,6 @@ sioScript.onload = () => {
     onTick(data);
   });
 
-  socket.on('tick',  data => onTick(data));
   socket.on('error', data => showToast(data.message || 'Unknown error'));
 
   // Wire forward test engine events
@@ -1312,13 +1406,24 @@ function setEngineState(state) {
 }
 
 function setMode(mode) {
+  if (APP_ENG.mode === mode) return;   // already in this mode — do nothing
   APP_ENG.mode = mode;
   if (mode === 'forward_test') {
     btnModeFT.className   = 'mode-btn active-ft';
     btnModeLive.className = 'mode-btn';
+    portfolioPanel.style.display = 'none';
+    stopPortPoll();
   } else {
     btnModeFT.className   = 'mode-btn';
     btnModeLive.className = 'mode-btn active-live';
+    portfolioPanel.style.display = 'block';
+    // Reset so next tab click triggers a full render
+    holdingsLoaded  = false;
+    positionsLoaded = false;
+    // Full load on whichever tab is active
+    if (activePortTab === 'holdings')  loadHoldings();
+    else                               loadPositions();
+    startPortPoll();
   }
   if (APP.socket) APP.socket.emit('mode:switch', { mode });
 }
@@ -1506,6 +1611,194 @@ function flashNotice(msg, color) {
   clearTimeout(el._timer);
   el._timer = setTimeout(() => { el.style.opacity = '0'; }, 4000);
 }
+
+// ══════════════════════════════════════
+//  PORTFOLIO (live mode only)
+//  Strategy:
+//    - loadHoldings() / loadPositions() → full fetch + full render (once on first open)
+//    - refreshHoldingPrices() / refreshPositionPrices() → fetch prices only, update cells
+//    - Polling every 10s for price-only updates (no re-render)
+//    - New trade (order:placed) → append a row, no full re-render
+// ══════════════════════════════════════
+const portfolioPanel   = document.getElementById('portfolioPanel');
+const holdingsContent  = document.getElementById('holdingsContent');
+const positionsContent = document.getElementById('positionsContent');
+const holdingsBody     = document.getElementById('holdingsBody');
+const positionsBody    = document.getElementById('positionsBody');
+const tabHoldings      = document.getElementById('tabHoldings');
+const tabPositions     = document.getElementById('tabPositions');
+
+let activePortTab    = 'holdings';
+let holdingsLoaded   = false;   // full render done?
+let positionsLoaded  = false;
+let portPollTimer    = null;
+
+tabHoldings.addEventListener('click', () => switchPortTab('holdings'));
+tabPositions.addEventListener('click', () => switchPortTab('positions'));
+
+function switchPortTab(tab) {
+  activePortTab = tab;
+  tabHoldings.classList.toggle('active', tab === 'holdings');
+  tabPositions.classList.toggle('active', tab === 'positions');
+  holdingsContent.style.display  = tab === 'holdings'  ? 'block' : 'none';
+  positionsContent.style.display = tab === 'positions' ? 'block' : 'none';
+  // Only do full render on first open of each tab
+  if (tab === 'holdings'  && !holdingsLoaded)  loadHoldings();
+  if (tab === 'positions' && !positionsLoaded) loadPositions();
+}
+
+// ── Full render (called once per tab) ────────────────────────────────────────
+
+function holdingRow(h) {
+  const pnl = h.pnl ?? 0;
+  const day = h.day_change_pct ?? 0;
+  return `<tr data-symbol="${h.symbol}">
+    <td><strong>${h.symbol}</strong></td>
+    <td>${h.exchange || '—'}</td>
+    <td>${h.quantity ?? '—'}</td>
+    <td>${h.avg_price?.toFixed(2) ?? '—'}</td>
+    <td class="h-price">${h.last_price?.toFixed(2) ?? '—'}</td>
+    <td>₹${h.invested_value?.toFixed(2) ?? '—'}</td>
+    <td class="h-curval">₹${h.current_value?.toFixed(2) ?? '—'}</td>
+    <td class="h-pnl ${pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${pnl >= 0 ? '+' : ''}₹${pnl.toFixed(2)}</td>
+    <td class="h-day ${day >= 0 ? 'pnl-pos' : 'pnl-neg'}">${day >= 0 ? '+' : ''}${day.toFixed(2)}%</td>
+  </tr>`;
+}
+
+function positionRow(p) {
+  const pnl = p.pnl ?? 0;
+  return `<tr data-symbol="${p.symbol}">
+    <td><strong>${p.symbol}</strong></td>
+    <td>${p.exchange || '—'}</td>
+    <td class="p-qty">${p.quantity ?? '—'}</td>
+    <td>${p.avg_price?.toFixed(2) ?? '—'}</td>
+    <td class="p-price">${p.last_price?.toFixed(2) ?? '—'}</td>
+    <td class="p-pnl ${pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}">${pnl >= 0 ? '+' : ''}₹${pnl.toFixed(2)}</td>
+    <td class="p-m2m">${p.m2m?.toFixed(2) ?? '—'}</td>
+    <td>${p.product || '—'}</td>
+  </tr>`;
+}
+
+async function loadHoldings() {
+  holdingsBody.innerHTML = `<tr><td colspan="9" class="port-empty">Loading...</td></tr>`;
+  try {
+    const res  = await fetch('/api/holdings');
+    const data = await res.json();
+    const list = data.holdings || [];
+    if (!list.length) {
+      holdingsBody.innerHTML = `<tr><td colspan="9" class="port-empty">No holdings found</td></tr>`;
+      return;
+    }
+    holdingsBody.innerHTML = list.map(holdingRow).join('');
+    holdingsLoaded = true;
+  } catch (e) {
+    holdingsBody.innerHTML = `<tr><td colspan="9" class="port-empty">Failed to load holdings</td></tr>`;
+    console.error('loadHoldings error:', e);
+  }
+}
+
+async function loadPositions() {
+  positionsBody.innerHTML = `<tr><td colspan="8" class="port-empty">Loading...</td></tr>`;
+  try {
+    const res  = await fetch('/api/positions');
+    const data = await res.json();
+    const list = data.positions || [];
+    if (!list.length) {
+      positionsBody.innerHTML = `<tr><td colspan="8" class="port-empty">No open positions</td></tr>`;
+      return;
+    }
+    positionsBody.innerHTML = list.map(positionRow).join('');
+    positionsLoaded = true;
+  } catch (e) {
+    positionsBody.innerHTML = `<tr><td colspan="8" class="port-empty">Failed to load positions</td></tr>`;
+    console.error('loadPositions error:', e);
+  }
+}
+
+// ── Price-only in-place update (no re-render) ─────────────────────────────────
+
+async function refreshHoldingPrices() {
+  if (!holdingsLoaded) return;
+  try {
+    const res  = await fetch('/api/holdings');
+    const data = await res.json();
+    (data.holdings || []).forEach(h => {
+      const row = holdingsBody.querySelector(`tr[data-symbol="${h.symbol}"]`);
+      if (!row) {
+        // New holding appeared — append a row
+        holdingsBody.insertAdjacentHTML('beforeend', holdingRow(h));
+        return;
+      }
+      const pnl = h.pnl ?? 0;
+      const day = h.day_change_pct ?? 0;
+      row.querySelector('.h-price').textContent  = h.last_price?.toFixed(2) ?? '—';
+      row.querySelector('.h-curval').textContent = `₹${h.current_value?.toFixed(2) ?? '—'}`;
+      const pnlEl = row.querySelector('.h-pnl');
+      pnlEl.textContent = `${pnl >= 0 ? '+' : ''}₹${pnl.toFixed(2)}`;
+      pnlEl.className   = `h-pnl ${pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
+      const dayEl = row.querySelector('.h-day');
+      dayEl.textContent = `${day >= 0 ? '+' : ''}${day.toFixed(2)}%`;
+      dayEl.className   = `h-day ${day >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
+    });
+  } catch (e) { console.error('refreshHoldingPrices error:', e); }
+}
+
+async function refreshPositionPrices() {
+  if (!positionsLoaded) return;
+  try {
+    const res  = await fetch('/api/positions');
+    const data = await res.json();
+    const list = data.positions || [];
+
+    // Remove rows for closed positions
+    positionsBody.querySelectorAll('tr[data-symbol]').forEach(row => {
+      if (!list.find(p => p.symbol === row.dataset.symbol))
+        row.remove();
+    });
+
+    list.forEach(p => {
+      const row = positionsBody.querySelector(`tr[data-symbol="${p.symbol}"]`);
+      if (!row) {
+        // New position — append row
+        const empty = positionsBody.querySelector('.port-empty');
+        if (empty) positionsBody.innerHTML = '';
+        positionsBody.insertAdjacentHTML('beforeend', positionRow(p));
+        return;
+      }
+      const pnl = p.pnl ?? 0;
+      row.querySelector('.p-price').textContent = p.last_price?.toFixed(2) ?? '—';
+      row.querySelector('.p-qty').textContent   = p.quantity ?? '—';
+      const pnlEl = row.querySelector('.p-pnl');
+      pnlEl.textContent = `${pnl >= 0 ? '+' : ''}₹${pnl.toFixed(2)}`;
+      pnlEl.className   = `p-pnl ${pnl >= 0 ? 'pnl-pos' : 'pnl-neg'}`;
+      row.querySelector('.p-m2m').textContent = p.m2m?.toFixed(2) ?? '—';
+    });
+  } catch (e) { console.error('refreshPositionPrices error:', e); }
+}
+
+// ── Polling — 10s price updates, only while portfolio panel is visible ─────────
+
+function startPortPoll() {
+  stopPortPoll();
+  portPollTimer = setInterval(() => {
+    if (activePortTab === 'holdings')  refreshHoldingPrices();
+    else                               refreshPositionPrices();
+  }, 10_000);
+}
+
+function stopPortPoll() {
+  if (portPollTimer) { clearInterval(portPollTimer); portPollTimer = null; }
+}
+
+// ── Manual refresh button ─────────────────────────────────────────────────────
+
+document.getElementById('btnRefreshPort').addEventListener('click', () => {
+  if (activePortTab === 'holdings') {
+    holdingsLoaded ? refreshHoldingPrices() : loadHoldings();
+  } else {
+    positionsLoaded ? refreshPositionPrices() : loadPositions();
+  }
+});
 
 // ══════════════════════════════════════
 //  INIT

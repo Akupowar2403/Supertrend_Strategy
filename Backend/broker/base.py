@@ -23,6 +23,9 @@ class BrokerABC(ABC):
     def get_positions(self) -> list[dict]: ...
 
     @abstractmethod
+    def get_holdings(self) -> list[dict]: ...
+
+    @abstractmethod
     def get_order_status(self, order_id: str) -> dict: ...
 
     @abstractmethod

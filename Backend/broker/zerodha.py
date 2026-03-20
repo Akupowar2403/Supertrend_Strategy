@@ -156,6 +156,10 @@ class ZerodhaBroker(BrokerABC):
         """Returns list of net positions."""
         return self.kite.positions()["net"]
 
+    def get_holdings(self) -> list[dict]:
+        """Returns list of DEMAT equity holdings."""
+        return self.kite.holdings()
+
     def get_order_status(self, order_id: str) -> dict:
         """Returns the latest status of an order."""
         history = self.kite.order_history(order_id)

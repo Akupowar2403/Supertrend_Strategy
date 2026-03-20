@@ -170,6 +170,22 @@ class ForwardTestBroker(BrokerABC):
     def get_positions(self) -> list[dict]:
         return [self.position] if self.position else []
 
+    def get_holdings(self) -> list[dict]:
+        """
+        Forward test has no real DEMAT holdings.
+        Returns virtual capital summary as a single holding-like entry.
+        """
+        total_pnl = sum(t["pnl_amount"] for t in self.trades) if self.trades else 0.0
+        return [{
+            "mode":              "forward_test",
+            "initial_capital":   self.initial_capital,
+            "available_capital": round(self.available_capital, 2),
+            "total_pnl":         round(total_pnl, 2),
+            "total_trades":      len(self.trades),
+            "wins":              sum(1 for t in self.trades if t["pnl_amount"] >= 0),
+            "losses":            sum(1 for t in self.trades if t["pnl_amount"] < 0),
+        }]
+
     def update_peak_price(self, current_price: float) -> None:
         """Call each tick to keep peak_price updated for trailing SL."""
         if self.position and current_price > self.position["peak_price"]:
