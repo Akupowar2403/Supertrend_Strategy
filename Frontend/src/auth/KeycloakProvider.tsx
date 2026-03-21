@@ -26,18 +26,11 @@ function PendingScreen({ username, onCheck, checking }: {
 }) {
   return (
     <div style={{
-      minHeight: "100vh", background: "#0a0f1e",
+      minHeight: "100vh", background: "#ffffff",
       display: "flex", alignItems: "center", justifyContent: "center",
       fontFamily: "system-ui, -apple-system, sans-serif",
       padding: "24px",
     }}>
-      {/* Background glow */}
-      <div style={{
-        position: "fixed", top: "30%", left: "50%", transform: "translate(-50%, -50%)",
-        width: 600, height: 600, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
 
       <div style={{
         width: "100%", maxWidth: 440, position: "relative",
@@ -57,19 +50,19 @@ function PendingScreen({ username, onCheck, checking }: {
           }} />
 
           <div style={{ padding: "40px 40px 36px" }}>
-            {/* Icon */}
-            <div style={{
-              width: 64, height: 64, borderRadius: 18, marginBottom: 24,
-              background: "linear-gradient(135deg, #1e1b4b, #312e81)",
-              border: "1px solid #3730a3",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 28,
-              boxShadow: "0 8px 24px rgba(99,102,241,0.2)",
-            }}>⏳</div>
-
-            {/* Title */}
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#f9fafb", marginBottom: 8, letterSpacing: "-0.4px" }}>
-              Pending Approval
+            {/* Icon + Title — centred */}
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <div style={{
+                width: 64, height: 64, borderRadius: 18, margin: "0 auto 16px",
+                background: "linear-gradient(135deg, #1e1b4b, #312e81)",
+                border: "1px solid #3730a3",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 28,
+                boxShadow: "0 8px 24px rgba(99,102,241,0.2)",
+              }}>⏳</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#f9fafb", letterSpacing: "-0.4px" }}>
+                Pending Approval
+              </div>
             </div>
             <div style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.7, marginBottom: 28 }}>
               Your account{" "}
@@ -151,7 +144,7 @@ function PendingScreen({ username, onCheck, checking }: {
         </div>
 
         {/* Footer */}
-        <div style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: "#374151" }}>
+        <div style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: "#94a3b8" }}>
           SWTS — Super Trend Trading System
         </div>
       </div>
@@ -164,17 +157,11 @@ function PendingScreen({ username, onCheck, checking }: {
 function RevokedScreen({ username }: { username: string }) {
   return (
     <div style={{
-      minHeight: "100vh", background: "#0a0f1e",
+      minHeight: "100vh", background: "#ffffff",
       display: "flex", alignItems: "center", justifyContent: "center",
       fontFamily: "system-ui, -apple-system, sans-serif",
       padding: "24px",
     }}>
-      <div style={{
-        position: "fixed", top: "30%", left: "50%", transform: "translate(-50%, -50%)",
-        width: 600, height: 600, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(239,68,68,0.06) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
 
       <div style={{ width: "100%", maxWidth: 440, position: "relative" }}>
         <div style={{
@@ -184,16 +171,17 @@ function RevokedScreen({ username }: { username: string }) {
           <div style={{ height: 4, background: "linear-gradient(90deg, #dc2626, #ef4444, #f97316)" }} />
 
           <div style={{ padding: "40px 40px 36px" }}>
-            <div style={{
-              width: 64, height: 64, borderRadius: 18, marginBottom: 24,
-              background: "linear-gradient(135deg, #1a0505, #450a0a)",
-              border: "1px solid #7f1d1d",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 28, boxShadow: "0 8px 24px rgba(220,38,38,0.2)",
-            }}>🚫</div>
-
-            <div style={{ fontSize: 22, fontWeight: 800, color: "#f9fafb", marginBottom: 8, letterSpacing: "-0.4px" }}>
-              Access Revoked
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <div style={{
+                width: 64, height: 64, borderRadius: 18, margin: "0 auto 16px",
+                background: "linear-gradient(135deg, #1a0505, #450a0a)",
+                border: "1px solid #7f1d1d",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 28, boxShadow: "0 8px 24px rgba(220,38,38,0.2)",
+              }}>🚫</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#f9fafb", letterSpacing: "-0.4px" }}>
+                Access Revoked
+              </div>
             </div>
             <div style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.7, marginBottom: 28 }}>
               Access for{" "}
@@ -229,7 +217,7 @@ function RevokedScreen({ username }: { username: string }) {
             >Sign out</button>
           </div>
         </div>
-        <div style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: "#374151" }}>
+        <div style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: "#94a3b8" }}>
           SWTS — Super Trend Trading System
         </div>
       </div>
