@@ -5,10 +5,11 @@ import UserRow            from "./UserRow"
 import type { AdminUser } from "../../hooks/useAdminUsers"
 
 interface Props {
-  users:    AdminUser[]
-  onAssign: (userId: string, role: string) => void
-  onRemove: (userId: string, role: string) => void
-  onToggle: (userId: string, enabled: boolean) => void
+  users:        AdminUser[]
+  activeFilter: string
+  onAssign:     (userId: string, role: string) => void
+  onRemove:     (userId: string, role: string) => void
+  onToggle:     (userId: string, enabled: boolean) => void
 }
 
 const TH: React.CSSProperties = {
@@ -24,27 +25,19 @@ const TH: React.CSSProperties = {
   whiteSpace:    "nowrap",
 }
 
-const ROLE_FILTERS = [
-  { value: "all",     label: "All"     },
-  { value: "admin",   label: "Admin"   },
-  { value: "approve", label: "Approve" },
-  { value: "revoke",  label: "Revoke"  },
-  { value: "pending", label: "Pending" },
-  { value: "no-role", label: "No Role" },
-]
 
-export default function UserTable({ users, onAssign, onRemove, onToggle }: Props) {
-  const [query,      setQuery]      = useState("")
-  const [roleFilter, setRoleFilter] = useState("all")
+export default function UserTable({ users, activeFilter, onAssign, onRemove, onToggle }: Props) {
+  const [query, setQuery] = useState("")
 
+  // activeFilter from stat card takes precedence; local pill is secondary search
   const filtered = users.filter(u => {
     const matchQ = !query ||
       u.username?.toLowerCase().includes(query.toLowerCase()) ||
       u.email?.toLowerCase().includes(query.toLowerCase())
     const matchR =
-      roleFilter === "all"     ? true :
-      roleFilter === "no-role" ? u.roles.length === 0 :
-      u.roles.includes(roleFilter)
+      activeFilter === "all"     ? true :
+      activeFilter === "no-role" ? u.roles.length === 0 :
+      u.roles.includes(activeFilter)
     return matchQ && matchR
   })
 
@@ -75,22 +68,6 @@ export default function UserTable({ users, onAssign, onRemove, onToggle }: Props
           />
         </div>
 
-        {/* Role filter pills */}
-        <div style={{ display: "flex", gap: 6 }}>
-          {ROLE_FILTERS.map(f => (
-            <button
-              key={f.value}
-              onClick={() => setRoleFilter(f.value)}
-              style={{
-                padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-                border: `1px solid ${roleFilter === f.value ? "#6366f1" : "#334155"}`,
-                background: roleFilter === f.value ? "#1e1b4b" : "#0f172a",
-                color: roleFilter === f.value ? "#818cf8" : "#64748b",
-                cursor: "pointer", transition: "all 0.15s",
-              }}
-            >{f.label}</button>
-          ))}
-        </div>
 
         {/* Count */}
         <div style={{
@@ -110,12 +87,13 @@ export default function UserTable({ users, onAssign, onRemove, onToggle }: Props
             <th style={TH}>Roles</th>
             <th style={TH}>Joined</th>
             <th style={TH}>Status</th>
+            <th style={TH}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {filtered.length === 0 ? (
             <tr>
-              <td colSpan={4} style={{ padding: "48px", textAlign: "center", fontSize: 13, color: "#475569" }}>
+              <td colSpan={5} style={{ padding: "48px", textAlign: "center", fontSize: 13, color: "#475569" }}>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
                 No users match your search
               </td>

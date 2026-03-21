@@ -87,6 +87,34 @@ export default function UserRow({ user, onAssign, onRemove, onToggle }: Props) {
         </div>
       </td>
 
+      {/* Quick actions — Approve/Revoke for pending, empty cell otherwise */}
+      <td style={{ padding: "13px 20px" }}>
+        {user.roles.includes("pending") && (
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              onClick={() => onAssign(user.id, "approve")}
+              style={{
+                padding: "5px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                border: "1px solid #064e3b", background: "#052e16", color: "#34d399",
+                cursor: "pointer", transition: "all 0.15s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#064e3b" }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#052e16" }}
+            >✓ Approve</button>
+            <button
+              onClick={() => onAssign(user.id, "revoke")}
+              style={{
+                padding: "5px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                border: "1px solid #7f1d1d", background: "#1a0505", color: "#f87171",
+                cursor: "pointer", transition: "all 0.15s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#7f1d1d" }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#1a0505" }}
+            >✕ Revoke</button>
+          </div>
+        )}
+      </td>
+
       {/* Joined */}
       <td style={{ padding: "13px 20px", fontSize: 12, color: "#475569" }}>
         {user.createdAt

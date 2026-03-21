@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends
 from api.admin.auth           import require_admin
 from api.admin.keycloak_client import (
     assign_role,
+    ensure_pending_default_role,
     get_admin_token,
     list_users,
     remove_role,
@@ -49,3 +50,13 @@ async def api_set_status(user_id: str, body: dict):
     token   = await get_admin_token()
     await set_user_enabled(token, user_id, enabled)
     return {"user_id": user_id, "enabled": enabled}
+
+
+@router.post("/setup-realm")
+async def api_setup_realm():
+    """
+    One-time setup: adds 'pending' as the default realm role so every
+    new registered user automatically receives the pending role.
+    """
+    token = await get_admin_token()
+    return await ensure_pending_default_role(token)

@@ -1,7 +1,12 @@
 """
 api/admin/keycloak_client.py — Thin async wrapper around the Keycloak Admin REST API.
 
-All functions accept an admin token so callers can re-use a single token per request.
+Role model:
+  STATUS_ROLES  = (approve, revoke, pending)  — mutually exclusive, one at a time
+  admin         — additive, independent of status roles
+
+When a status role is assigned, all other status roles are removed automatically.
+New users auto-receive 'pending' via Keycloak's default-roles composite.
 """
 
 import logging
@@ -14,7 +19,8 @@ from config.settings import settings
 log = logging.getLogger(__name__)
 
 MANAGED_ROLES = ("admin", "approve", "revoke", "pending")
-_SKIP_ROLES   = {"default-roles-swts", "offline_access", "uma_authorization"}
+STATUS_ROLES  = ("approve", "revoke", "pending")   # mutually exclusive
+_SKIP_ROLE_PREFIXES = ("default-roles-", "offline_access", "uma_authorization")
 
 
 # ── Token ──────────────────────────────────────────────────────────────────────
@@ -45,10 +51,68 @@ def _headers(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
+# ── Realm setup ────────────────────────────────────────────────────────────────
+
+async def ensure_pending_default_role(token: str) -> dict:
+    """
+    Add 'pending' to the realm's default-roles composite so every new
+    registered user automatically receives the pending role.
+    """
+    base = _base()
+    h    = _headers(token)
+
+    async with httpx.AsyncClient() as client:
+        # Fetch the pending role representation
+        r = await client.get(f"{base}/roles/pending", headers=h)
+        if not r.is_success:
+            raise HTTPException(status_code=404, detail="Role 'pending' not found — create it in Keycloak first")
+        pending_rep = r.json()
+
+        # Fetch the default-roles-{realm} composite role (Keycloak uses lowercase realm name here)
+        default_role_name = f"default-roles-{settings.keycloak_realm.lower()}"
+        r = await client.get(f"{base}/roles/{default_role_name}", headers=h)
+        if not r.is_success:
+            raise HTTPException(status_code=404, detail=f"Default roles composite '{default_role_name}' not found")
+        default_role_id = r.json()["id"]
+
+        # Check if pending is already a composite of default-roles
+        r = await client.get(f"{base}/roles-by-id/{default_role_id}/composites", headers=h)
+        existing = [c["name"] for c in r.json()] if r.is_success else []
+        if "pending" in existing:
+            return {"status": "already_set", "message": "'pending' is already a default role"}
+
+        # Add pending to the default-roles composite
+        rr = await client.post(
+            f"{base}/roles-by-id/{default_role_id}/composites",
+            json=[pending_rep],
+            headers=h,
+        )
+        if not rr.is_success:
+            raise HTTPException(status_code=rr.status_code, detail=rr.text)
+
+    log.info("Realm setup: 'pending' set as default role for new registrations")
+    return {"status": "ok", "message": "'pending' is now the default role for new users"}
+
+
 # ── User operations ────────────────────────────────────────────────────────────
 
+def _filter_roles(roles: list[dict]) -> list[str]:
+    """Filter out Keycloak internal roles, return only meaningful role names."""
+    result = []
+    for rm in roles:
+        name = rm["name"]
+        if any(name == skip or name.startswith("default-roles-") for skip in _SKIP_ROLE_PREFIXES):
+            continue
+        result.append(name)
+    return result
+
+
 async def list_users(token: str) -> list[dict]:
-    """Return all realm users with their filtered realm roles."""
+    """
+    Return all realm users with their effective realm roles.
+    Uses /composite endpoint so roles assigned via default-roles (e.g. pending)
+    are included even when not directly assigned.
+    """
     base = _base()
     h    = _headers(token)
 
@@ -60,11 +124,9 @@ async def list_users(token: str) -> list[dict]:
         result = []
         for u in users:
             uid = u["id"]
-            rr  = await client.get(f"{base}/users/{uid}/role-mappings/realm", headers=h)
-            roles = (
-                [rm["name"] for rm in rr.json() if rm["name"] not in _SKIP_ROLES]
-                if rr.is_success else []
-            )
+            # composite returns ALL effective roles including those from default-roles composites
+            rr = await client.get(f"{base}/users/{uid}/role-mappings/realm/composite", headers=h)
+            roles = _filter_roles(rr.json()) if rr.is_success else []
             result.append({
                 "id":        uid,
                 "username":  u.get("username"),
@@ -80,12 +142,36 @@ async def list_users(token: str) -> list[dict]:
 
 
 async def assign_role(token: str, user_id: str, role_name: str) -> None:
-    """Assign a realm role to a user."""
+    """
+    Assign a realm role to a user.
+    If the role is a status role (approve/revoke/pending), all other
+    status roles are removed first — they are mutually exclusive.
+    """
     _validate_role(role_name)
     base = _base()
     h    = _headers(token)
 
     async with httpx.AsyncClient() as client:
+        # Mutually exclusive: remove all other status roles before assigning
+        if role_name in STATUS_ROLES:
+            for other in STATUS_ROLES:
+                if other == role_name:
+                    continue
+                try:
+                    r = await client.get(f"{base}/roles/{other}", headers=h)
+                    if r.is_success:
+                        rr = await client.request(
+                            "DELETE",
+                            f"{base}/users/{user_id}/role-mappings/realm",
+                            json=[r.json()],
+                            headers=h,
+                        )
+                        if rr.is_success:
+                            log.info("assign_role: removed conflicting role '%s' from user %s", other, user_id)
+                except Exception as exc:
+                    log.warning("assign_role: could not remove '%s' from %s: %s", other, user_id, exc)
+
+        # Assign the requested role
         role_rep = await _fetch_role(client, base, h, role_name)
         rr = await client.post(
             f"{base}/users/{user_id}/role-mappings/realm",
@@ -94,6 +180,8 @@ async def assign_role(token: str, user_id: str, role_name: str) -> None:
         )
         if not rr.is_success:
             raise HTTPException(status_code=rr.status_code, detail=rr.text)
+
+    log.info("assign_role: '%s' assigned to user %s", role_name, user_id)
 
 
 async def remove_role(token: str, user_id: str, role_name: str) -> None:
