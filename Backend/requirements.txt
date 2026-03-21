@@ -4,6 +4,7 @@ kiteconnect
 # Auth & Login
 pyotp
 requests
+httpx
 
 # Config
 python-dotenv

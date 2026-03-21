@@ -54,6 +54,7 @@ from broker.instruments import refresh_instruments
 from api.routes_market import router as market_router
 from api.routes_trades import router as trades_router
 from api.routes_portfolio import router as portfolio_router
+from api.routes_admin import router as admin_router
 
 logging.basicConfig(
     level   = logging.INFO,
@@ -197,6 +198,7 @@ templates   = Jinja2Templates(directory="templates")
 fastapi_app.include_router(market_router)
 fastapi_app.include_router(trades_router)
 fastapi_app.include_router(portfolio_router)
+fastapi_app.include_router(admin_router)
 
 
 # ── OAuth login routes ────────────────────────────────────────────────────────

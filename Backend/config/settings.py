@@ -27,10 +27,12 @@ class Settings(BaseSettings):
     fernet_key: str   # Fernet key for encrypting credentials in DB
 
     # ── Keycloak ──────────────────────────────────────────────────────────────
-    keycloak_url:           str = "http://localhost:8080"
-    keycloak_realm:         str = "swts"
-    keycloak_client_id:     str = "swts-backend"
-    keycloak_client_secret: str = ""
+    keycloak_url:             str = "http://localhost:8080"
+    keycloak_realm:           str = "swts"
+    keycloak_client_id:       str = "swts-backend"
+    keycloak_client_secret:   str = ""
+    keycloak_admin_user:      str = "admin"
+    keycloak_admin_password:  str = "admin123"
 
     # ── Trading mode ──────────────────────────────────────────────────────────
     broker_mode: str = "forward_test"   # "forward_test" | "live"

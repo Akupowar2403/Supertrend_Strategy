@@ -1,7 +1,7 @@
 import { useTick }   from "../hooks/useTick"
 import { useEngine } from "../hooks/useEngine"
 
-type Page = "dashboard" | "trades" | "logs" | "settings"
+import type { Page } from "../App"
 
 const PAGE_TITLE: Record<Page, string> = {
   dashboard: "Dashboard",

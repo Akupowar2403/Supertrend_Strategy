@@ -5,7 +5,7 @@ import { useTimeframes, useInstrumentSearch } from "../hooks/useInstruments"
 import { useAuth }            from "../auth/KeycloakProvider"
 import type { Instrument }    from "../types"
 
-type Page = "dashboard" | "trades" | "logs" | "settings"
+import type { Page } from "../App"
 
 interface Props {
   page:    Page

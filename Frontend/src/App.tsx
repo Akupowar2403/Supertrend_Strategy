@@ -1,13 +1,15 @@
-import { useState } from "react"
-import Sidebar       from "./components/Sidebar"
-import TopBar        from "./components/TopBar"
-import StatsBar      from "./components/StatsBar"
-import StrategyPanel  from "./components/StrategyPanel"
-import PositionPanel  from "./components/PositionPanel"
-import TradeLog       from "./components/TradeLog"
-import LogPanel       from "./components/LogPanel"
+import { useState }    from "react"
+import Sidebar          from "./components/Sidebar"
+import TopBar           from "./components/TopBar"
+import StatsBar         from "./components/StatsBar"
+import StrategyPanel    from "./components/StrategyPanel"
+import PositionPanel    from "./components/PositionPanel"
+import TradeLog         from "./components/TradeLog"
+import LogPanel         from "./components/LogPanel"
+import AdminLayout      from "./components/admin/AdminLayout"
+import { useAuth }      from "./auth/KeycloakProvider"
 
-type Page = "dashboard" | "trades" | "logs" | "settings"
+export type Page = "dashboard" | "trades" | "logs" | "settings"
 
 function SettingsPage() {
   return (
@@ -24,15 +26,39 @@ function SettingsPage() {
 }
 
 export default function App() {
+  const { hasRole } = useAuth()
   const [page, setPage] = useState<Page>("dashboard")
+
+  // Admin route — render completely separate layout, no main sidebar/topbar
+  if (window.location.pathname === "/admin") {
+    if (!hasRole("admin")) {
+      return (
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          height: "100vh", background: "#0f172a", color: "#94a3b8",
+          fontFamily: "system-ui, sans-serif", gap: 12,
+        }}>
+          <div style={{ fontSize: 20, color: "#f1f5f9", fontWeight: 600 }}>Access Denied</div>
+          <div style={{ fontSize: 13 }}>You need the <code style={{ color: "#818cf8" }}>admin</code> role to access this page.</div>
+          <button
+            onClick={() => window.history.pushState({}, "", "/")}
+            style={{
+              marginTop: 8, padding: "6px 20px", borderRadius: 6,
+              border: "1px solid #334155", background: "#1e293b",
+              color: "#94a3b8", fontSize: 13, cursor: "pointer",
+            }}
+          >Go back</button>
+        </div>
+      )
+    }
+    return <AdminLayout />
+  }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f1f5f9" }}>
 
-      {/* Sidebar */}
       <Sidebar page={page} setPage={setPage} />
 
-      {/* Main content — offset by sidebar width */}
       <div style={{ marginLeft: 240, flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
 
         <TopBar page={page} />
@@ -41,19 +67,14 @@ export default function App() {
           <>
             <StatsBar />
             <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-
-              {/* Row 1 — Strategy + Position */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <StrategyPanel />
                 <PositionPanel />
               </div>
-
-              {/* Row 2 — Trade Log + Logs */}
               <div style={{ display: "grid", gridTemplateColumns: "58fr 42fr", gap: 16, minHeight: 360 }}>
                 <TradeLog />
                 <LogPanel />
               </div>
-
             </div>
           </>
         )}

@@ -64,7 +64,7 @@ export default function KeycloakProvider({ children }: { children: ReactNode }) 
   const roles    = keycloak.tokenParsed?.realm_access?.roles ?? []
   const username = keycloak.tokenParsed?.preferred_username
 
-  const hasAccess = roles.includes("admin") || roles.includes("trader")
+  const hasAccess = roles.includes("admin") || roles.includes("approve") || roles.includes("revoke") || roles.includes("pending")
 
   const value: AuthContextValue = {
     token,
@@ -85,7 +85,7 @@ export default function KeycloakProvider({ children }: { children: ReactNode }) 
         <div style={{ fontSize: 14 }}>
           Your account <strong style={{ color: "#f1f5f9" }}>{username}</strong> has no role assigned yet.
         </div>
-        <div style={{ fontSize: 13 }}>Contact an admin to assign you the <code style={{ color: "#38bdf8" }}>trader</code> or <code style={{ color: "#38bdf8" }}>admin</code> role.</div>
+        <div style={{ fontSize: 13 }}>Contact an admin to assign you a role: <code style={{ color: "#38bdf8" }}>admin</code>, <code style={{ color: "#38bdf8" }}>approve</code>, <code style={{ color: "#38bdf8" }}>revoke</code>, or <code style={{ color: "#38bdf8" }}>pending</code>.</div>
         <button
           onClick={() => keycloak.logout({ redirectUri: window.location.origin })}
           style={{
