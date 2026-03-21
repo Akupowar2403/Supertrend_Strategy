@@ -14,26 +14,14 @@ interface Props {
 
 // ── Button style presets ────────────────────────────────────────────────────
 
-const BTN_STYLES: Record<string, React.CSSProperties> = {
-  green: {
-    padding: "5px 13px", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer",
-    border: "1px solid #064e3b", background: "#052e16", color: "#34d399", transition: "all 0.15s",
-  },
-  red: {
-    padding: "5px 13px", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer",
-    border: "1px solid #7f1d1d", background: "#1a0505", color: "#f87171", transition: "all 0.15s",
-  },
-  indigo: {
-    padding: "5px 13px", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer",
-    border: "1px solid #312e81", background: "#1e1b4b", color: "#818cf8", transition: "all 0.15s",
-  },
-  ghost: {
-    padding: "5px 13px", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer",
-    border: "1px solid #334155", background: "transparent", color: "#64748b", transition: "all 0.15s",
-  },
+const BTN: Record<string, React.CSSProperties> = {
+  green:  { padding: "6px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "1px solid #064e3b", background: "#052e16", color: "#34d399", transition: "all 0.15s" },
+  red:    { padding: "6px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "1px solid #7f1d1d", background: "#1a0505", color: "#f87171", transition: "all 0.15s" },
+  indigo: { padding: "6px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "1px solid #312e81", background: "#1e1b4b", color: "#818cf8", transition: "all 0.15s" },
+  ghost:  { padding: "6px 14px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "1px solid #334155", background: "transparent", color: "#64748b", transition: "all 0.15s" },
 }
 
-const BTN_HOVER: Record<string, Partial<React.CSSProperties>> = {
+const HOVER: Record<string, Partial<React.CSSProperties>> = {
   green:  { background: "#064e3b" },
   red:    { background: "#7f1d1d" },
   indigo: { background: "#312e81" },
@@ -53,13 +41,12 @@ function getActions(
 ): ActionDef[] {
   const id = user.id
 
-  const approve     : ActionDef = { label: "✓ Approve",      variant: "green",  onClick: () => onAssign(id, "approve") }
-  const revoke      : ActionDef = { label: "✕ Revoke",       variant: "red",    onClick: () => onAssign(id, "revoke")  }
-  const makeAdmin   : ActionDef = { label: "⛨ Make Admin",   variant: "indigo", onClick: () => onAssign(id, "admin")   }
-  const removeAdmin : ActionDef = { label: "− Rem. Admin",   variant: "ghost",  onClick: () => onRemove(id, "admin")   }
-  const del         : ActionDef = { label: "🗑 Delete",       variant: "red",    onClick: () => onDelete(id)            }
+  const approve     : ActionDef = { label: "✓ Approve",     variant: "green",  onClick: () => onAssign(id, "approve") }
+  const revoke      : ActionDef = { label: "✕ Revoke",      variant: "red",    onClick: () => onAssign(id, "revoke")  }
+  const makeAdmin   : ActionDef = { label: "⛨ Make Admin",  variant: "indigo", onClick: () => onAssign(id, "admin")   }
+  const removeAdmin : ActionDef = { label: "− Rem. Admin",  variant: "ghost",  onClick: () => onRemove(id, "admin")   }
+  const del         : ActionDef = { label: "🗑 Delete",      variant: "red",    onClick: () => onDelete(id)            }
 
-  // For "all" filter, derive from user's actual primary role
   const effective = filter === "all"
     ? user.roles.includes("admin")   ? "admin"
     : user.roles.includes("approve") ? "approve"
@@ -81,7 +68,6 @@ function getActions(
 export default function UserRow({ user, activeFilter, onAssign, onRemove, onDelete }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  // Only show managed roles (no keycloak internal roles)
   const managedRoles = user.roles.filter(r => MANAGED_ROLES.includes(r as typeof MANAGED_ROLES[number]))
   const displayRoles = managedRoles.length > 0 ? managedRoles : ["pending"]
 
@@ -98,67 +84,67 @@ export default function UserRow({ user, activeFilter, onAssign, onRemove, onDele
       onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
     >
 
-      {/* User — name + email */}
-      <td style={{ padding: "13px 20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      {/* User — avatar + name + email */}
+      <td style={{ padding: "16px 22px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{
-            width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+            width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
             background: "linear-gradient(135deg, #312e81, #4338ca)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 13, fontWeight: 700, color: "#a5b4fc",
+            fontSize: 16, fontWeight: 700, color: "#a5b4fc",
             border: "2px solid #3730a3",
           }}>
             {user.username?.[0]?.toUpperCase() ?? "?"}
           </div>
           <div>
-            <div style={{ fontWeight: 600, fontSize: 13, color: "#e2e8f0" }}>{user.username}</div>
-            <div style={{ fontSize: 11, color: "#475569", marginTop: 1 }}>{user.email || "—"}</div>
+            <div style={{ fontWeight: 600, fontSize: 15, color: "#e2e8f0" }}>{user.username}</div>
+            <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>{user.email || "—"}</div>
           </div>
         </div>
       </td>
 
-      {/* Status — role badges (display only) */}
-      <td style={{ padding: "13px 20px" }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+      {/* Status — role badges */}
+      <td style={{ padding: "16px 22px" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {displayRoles.map(r => <RoleBadge key={r} role={r} />)}
         </div>
       </td>
 
       {/* Joined */}
-      <td style={{ padding: "13px 20px", fontSize: 12, color: "#475569", whiteSpace: "nowrap" }}>
+      <td style={{ padding: "16px 22px", fontSize: 13, color: "#64748b", whiteSpace: "nowrap" }}>
         {user.createdAt
           ? new Date(user.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
           : "—"}
       </td>
 
       {/* Actions */}
-      <td style={{ padding: "13px 20px" }}>
+      <td style={{ padding: "16px 22px" }}>
         {confirmDelete ? (
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <span style={{ fontSize: 11, color: "#f87171", whiteSpace: "nowrap" }}>Delete user?</span>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 13, color: "#f87171", whiteSpace: "nowrap", fontWeight: 600 }}>Delete user?</span>
             <button
               onClick={() => { onDelete(user.id); setConfirmDelete(false) }}
-              style={{ ...BTN_STYLES.red, padding: "4px 10px" }}
-              onMouseEnter={e => Object.assign(e.currentTarget.style, BTN_HOVER.red)}
-              onMouseLeave={e => Object.assign(e.currentTarget.style, { background: BTN_STYLES.red.background })}
+              style={{ ...BTN.red, padding: "5px 12px" }}
+              onMouseEnter={e => Object.assign(e.currentTarget.style, HOVER.red)}
+              onMouseLeave={e => Object.assign(e.currentTarget.style, { background: BTN.red.background })}
             >Yes</button>
             <button
               onClick={() => setConfirmDelete(false)}
-              style={{ ...BTN_STYLES.ghost, padding: "4px 10px" }}
+              style={{ ...BTN.ghost, padding: "5px 12px" }}
             >No</button>
           </div>
         ) : (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
             {actions.map(a => (
               <button
                 key={a.label}
                 onClick={a.onClick}
-                style={{ ...BTN_STYLES[a.variant] }}
-                onMouseEnter={e => Object.assign(e.currentTarget.style, BTN_HOVER[a.variant])}
+                style={{ ...BTN[a.variant] }}
+                onMouseEnter={e => Object.assign(e.currentTarget.style, HOVER[a.variant])}
                 onMouseLeave={e => Object.assign(e.currentTarget.style, {
-                  background: BTN_STYLES[a.variant].background,
-                  color:      BTN_STYLES[a.variant].color,
-                  borderColor: (BTN_STYLES[a.variant] as any).borderColor ?? BTN_STYLES[a.variant].border,
+                  background:  BTN[a.variant].background,
+                  color:       BTN[a.variant].color,
+                  borderColor: BTN[a.variant].border,
                 })}
               >{a.label}</button>
             ))}

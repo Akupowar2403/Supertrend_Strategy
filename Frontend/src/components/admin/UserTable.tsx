@@ -13,11 +13,11 @@ interface Props {
 }
 
 const TH: React.CSSProperties = {
-  padding:       "11px 20px",
+  padding:       "13px 22px",
   textAlign:     "left",
-  fontSize:      11,
+  fontSize:      12,
   fontWeight:    700,
-  color:         "#475569",
+  color:         "#64748b",
   textTransform: "uppercase",
   letterSpacing: "0.8px",
   borderBottom:  "1px solid #334155",
@@ -45,19 +45,19 @@ export default function UserTable({ users, activeFilter, onAssign, onRemove, onD
     <div>
       {/* Filter bar */}
       <div style={{
-        display: "flex", gap: 10, padding: "14px 20px",
+        display: "flex", gap: 12, padding: "16px 22px",
         alignItems: "center", borderBottom: "1px solid #334155",
         background: "#1e293b",
       }}>
         <div style={{ flex: 1, position: "relative" }}>
-          <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#475569", pointerEvents: "none" }}>🔍</span>
+          <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", fontSize: 15, color: "#475569", pointerEvents: "none" }}>🔍</span>
           <input
             placeholder="Search username or email…"
             value={query}
             onChange={e => setQuery(e.target.value)}
             style={{
-              width: "100%", padding: "8px 12px 8px 34px",
-              borderRadius: 8, fontSize: 13, boxSizing: "border-box",
+              width: "100%", padding: "10px 14px 10px 38px",
+              borderRadius: 9, fontSize: 14, boxSizing: "border-box",
               border: "1px solid #334155", outline: "none",
               background: "#0f172a", color: "#e2e8f0",
               transition: "border-color 0.15s",
@@ -67,7 +67,7 @@ export default function UserTable({ users, activeFilter, onAssign, onRemove, onD
           />
         </div>
         <div style={{
-          padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
+          padding: "7px 16px", borderRadius: 20, fontSize: 13, fontWeight: 700,
           background: "#0f172a", color: "#475569", border: "1px solid #334155",
           whiteSpace: "nowrap",
         }}>
@@ -88,8 +88,8 @@ export default function UserTable({ users, activeFilter, onAssign, onRemove, onD
         <tbody>
           {filtered.length === 0 ? (
             <tr>
-              <td colSpan={4} style={{ padding: "48px", textAlign: "center", fontSize: 13, color: "#475569" }}>
-                <div style={{ fontSize: 28, marginBottom: 8 }}>🔍</div>
+              <td colSpan={4} style={{ padding: "56px", textAlign: "center", fontSize: 15, color: "#475569" }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>🔍</div>
                 No users match your search
               </td>
             </tr>

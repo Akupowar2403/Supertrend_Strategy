@@ -17,9 +17,9 @@ export default function RoleBadge({ role, onRemove }: Props) {
   const c = COLORS[role] ?? DEFAULT
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      padding: "3px 10px", borderRadius: 12,
-      fontSize: 11, fontWeight: 700,
+      display: "inline-flex", alignItems: "center", gap: 6,
+      padding: "4px 12px", borderRadius: 14,
+      fontSize: 13, fontWeight: 700,
       background: c.bg, color: c.color,
       border: `1px solid ${c.border}`,
       letterSpacing: "0.3px",
@@ -29,7 +29,7 @@ export default function RoleBadge({ role, onRemove }: Props) {
         <span
           onClick={e => { e.stopPropagation(); onRemove() }}
           title={`Remove ${role}`}
-          style={{ cursor: "pointer", fontSize: 10, opacity: 0.5, marginLeft: 1 }}
+          style={{ cursor: "pointer", fontSize: 11, opacity: 0.5, marginLeft: 2 }}
           onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
           onMouseLeave={e => (e.currentTarget.style.opacity = "0.5")}
         >✕</span>
