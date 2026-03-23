@@ -233,31 +233,35 @@
   .sym-dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
   .drop-item {
-    display: grid; grid-template-columns: auto 1fr auto;
-    align-items: center; gap: 10px;
-    padding: 10px 14px; cursor: pointer;
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 9px 14px; cursor: pointer;
     border-bottom: 1px solid var(--bg3);
     transition: background 0.12s;
   }
   .drop-item:last-child { border-bottom: none; }
   .drop-item:hover { background: var(--bg3); }
-  .drop-sym  { font-size: 13px; font-weight: 700; color: var(--text); min-width: 80px; }
-  .drop-name { font-size: 11px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Row 1: symbol name + badge side by side */
+  .drop-row1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .drop-sym  { font-size: 13px; font-weight: 700; color: var(--text); }
+
+  /* Row 2: sub-info (strike/expiry or company name) */
+  .drop-row2 { font-size: 11px; color: var(--text2); }
+
   .drop-exch {
-    font-size: 10px; font-weight: 600;
+    font-size: 10px; font-weight: 600; flex-shrink: 0;
     padding: 2px 7px; border-radius: 4px;
     background: var(--blue-bg); color: var(--blue);
-    border: 1px solid var(--blue-bdr); white-space: nowrap;
+    border: 1px solid var(--blue-bdr);
   }
   .drop-type {
-    font-size: 10px; font-weight: 700;
-    padding: 2px 7px; border-radius: 4px; white-space: nowrap;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+    padding: 2px 7px; border-radius: 4px;
   }
-  .drop-type.CE { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bdr); }
-  .drop-type.PE { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-bdr);   }
-  .drop-type.FUT{ background: var(--orange-bg);color: var(--orange);border: 1px solid var(--orange-bdr);}
-  .drop-type.EQ { background: var(--blue-bg);  color: var(--blue);  border: 1px solid var(--blue-bdr);  }
-  .drop-meta { font-size: 11px; color: var(--text2); white-space: nowrap; }
+  .drop-type.CE  { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-bdr);  }
+  .drop-type.PE  { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-bdr);    }
+  .drop-type.FUT { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-bdr); }
+  .drop-type.EQ  { background: var(--blue-bg);   color: var(--blue);   border: 1px solid var(--blue-bdr);  }
   .drop-msg { padding: 14px; text-align: center; color: var(--text2); font-size: 12px; }
 
   /* Selected symbol */
@@ -1130,16 +1134,27 @@ function renderDropdown(items) {
     symDropdown.innerHTML = `<div class="drop-msg">No results found</div>`;
     return;
   }
-  symDropdown.innerHTML = items.map(i => `
+  symDropdown.innerHTML = items.map(i => {
+    const isDerivative = i.exchange === 'NFO' || i.exchange === 'MCX';
+    const badge        = i.type
+      ? `<span class="drop-type ${i.type}">${i.type}</span>`
+      : `<span class="drop-exch">${i.exchange}</span>`;
+    const subInfo      = isDerivative && i.strike
+      ? `Strike: ${i.strike} &nbsp;·&nbsp; Expiry: ${i.expiry || '—'}`
+      : (i.name || i.exchange);
+    return `
     <div class="drop-item"
          data-token="${i.token}" data-symbol="${i.symbol}"
          data-name="${i.name||''}" data-exchange="${i.exchange}"
-         data-segment="${i.segment||''}">
-      <span class="drop-sym">${i.symbol}</span>
-      <span class="drop-name">${i.name||'—'}</span>
-      <span class="drop-exch">${i.exchange}</span>
-    </div>
-  `).join('');
+         data-segment="${i.segment||''}" data-type="${i.type||''}"
+         data-strike="${i.strike||''}" data-expiry="${i.expiry||''}">
+      <div class="drop-row1">
+        <span class="drop-sym">${i.symbol}</span>
+        ${badge}
+      </div>
+      <div class="drop-row2">${subInfo}</div>
+    </div>`;
+  }).join('');
 
   symDropdown.querySelectorAll('.drop-item').forEach(el => {
     el.addEventListener('click', () => selectSymbol({
@@ -1148,6 +1163,9 @@ function renderDropdown(items) {
       name:     el.dataset.name,
       exchange: el.dataset.exchange,
       segment:  el.dataset.segment,
+      type:     el.dataset.type,
+      strike:   el.dataset.strike,
+      expiry:   el.dataset.expiry,
     }));
   });
 }
@@ -1156,7 +1174,10 @@ function selectSymbol(inst) {
   APP.symbol        = inst;
   console.log('[selectSymbol] symbol set →', inst);
   selTicker.textContent = inst.symbol;
-  selInfo.textContent   = inst.name || '—';
+  const isDerivative    = inst.exchange === 'NFO' || inst.exchange === 'MCX';
+  selInfo.textContent   = isDerivative && inst.strike
+    ? `${inst.type}  ·  Strike: ${inst.strike}  ·  Expiry: ${inst.expiry}`
+    : (inst.name || '—');
   selToken.textContent  = `Token: ${inst.token}  ·  ${inst.exchange}`;
   symSelected.classList.add('show');
   symInput.value = '';

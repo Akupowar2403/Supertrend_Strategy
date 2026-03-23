@@ -74,6 +74,7 @@ async def search_instruments(
             "type":     inst.instrument_type,
             "lot_size": inst.lot_size,
             "expiry":   str(inst.expiry) if inst.expiry else None,
+            "strike":   inst.strike if inst.strike else None,
         }
         for inst in instruments
     ]
