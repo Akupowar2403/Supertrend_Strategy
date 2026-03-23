@@ -1147,12 +1147,13 @@ function renderDropdown(items) {
          data-token="${i.token}" data-symbol="${i.symbol}"
          data-name="${i.name||''}" data-exchange="${i.exchange}"
          data-segment="${i.segment||''}" data-type="${i.type||''}"
-         data-strike="${i.strike||''}" data-expiry="${i.expiry||''}">
+         data-strike="${i.strike||''}" data-expiry="${i.expiry||''}"
+         data-lot-size="${i.lot_size||1}">
       <div class="drop-row1">
         <span class="drop-sym">${i.symbol}</span>
         ${badge}
       </div>
-      <div class="drop-row2">${subInfo}</div>
+      <div class="drop-row2">${subInfo}${isDerivative && i.lot_size ? ` &nbsp;·&nbsp; Lot: ${i.lot_size}` : ''}</div>
     </div>`;
   }).join('');
 
@@ -1166,6 +1167,7 @@ function renderDropdown(items) {
       type:     el.dataset.type,
       strike:   el.dataset.strike,
       expiry:   el.dataset.expiry,
+      lot_size: parseInt(el.dataset.lotSize) || 1,
     }));
   });
 }
@@ -1179,6 +1181,12 @@ function selectSymbol(inst) {
     ? `${inst.type}  ·  Strike: ${inst.strike}  ·  Expiry: ${inst.expiry}`
     : (inst.name || '—');
   selToken.textContent  = `Token: ${inst.token}  ·  ${inst.exchange}`;
+
+  // Auto-fill qty with lot size for derivatives
+  if (isDerivative && inst.lot_size > 1) {
+    document.getElementById('qtyInput').value = inst.lot_size;
+  }
+
   symSelected.classList.add('show');
   symInput.value = '';
   closeDropdown();

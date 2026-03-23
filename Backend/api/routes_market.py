@@ -7,7 +7,7 @@ GET /api/instruments/{token} — get single instrument by token
 """
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, cast, String
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.database import get_db
@@ -41,15 +41,16 @@ async def search_instruments(
     limit:    int            = Query(20, le=100),
     db:       AsyncSession   = Depends(get_db),
 ):
-    """Search instruments by trading symbol or company name."""
+    """Search instruments by trading symbol, company name, or strike price."""
     q = query.strip()
-    sym_pattern  = f"{q}%"   # starts-with for symbol — NIFTY matches NIFTY* not BANKNIFTY
-    name_pattern = f"{q}%"   # starts-with for name   — NIFTY matches name=NIFTY not name=BANKNIFTY
+    sym_pattern  = f"{q}%"   # starts-with for symbol — NIFTY → NIFTY* not BANKNIFTY
+    name_pattern = f"{q}%"   # starts-with for name
 
     stmt = select(Instrument).where(
         or_(
             Instrument.tradingsymbol.ilike(sym_pattern),
             Instrument.name.ilike(name_pattern),
+            cast(Instrument.strike, String).like(f"{q}%"),  # e.g. "22550" matches strike=22550.0
         )
     )
 
