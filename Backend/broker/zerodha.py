@@ -114,7 +114,8 @@ class ZerodhaBroker(BrokerABC):
 
     def place_order(self, symbol: str, token: int, qty: int,
                     transaction_type: str, product: str,
-                    order_type: str, price: float = 0) -> str:
+                    order_type: str, price: float = 0,
+                    exchange: str = "NSE") -> str:
         """
         Place a real order on Zerodha via Kite Connect.
         Returns order_id on success, raises exception on failure.
@@ -128,7 +129,7 @@ class ZerodhaBroker(BrokerABC):
         try:
             order_id = self.kite.place_order(
                 variety          = self.kite.VARIETY_REGULAR,
-                exchange         = self.kite.EXCHANGE_NSE,
+                exchange         = exchange,
                 tradingsymbol    = symbol,
                 transaction_type = transaction_type,
                 quantity         = qty,

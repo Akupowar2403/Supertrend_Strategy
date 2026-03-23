@@ -37,6 +37,7 @@ async def search_instruments(
     query:    str            = Query(..., min_length=2, description="Symbol or name to search"),
     exchange: str | None     = Query(None, description="NSE | NFO | BSE | MCX"),
     segment:  str | None     = Query(None, description="NSE_EQ | NFO-FUT | NFO-OPT"),
+    type:     str | None     = Query(None, description="EQ | FUT | CE | PE"),
     limit:    int            = Query(20, le=100),
     db:       AsyncSession   = Depends(get_db),
 ):
@@ -54,6 +55,8 @@ async def search_instruments(
         stmt = stmt.where(Instrument.exchange == exchange.upper())
     if segment:
         stmt = stmt.where(Instrument.segment == segment)
+    if type:
+        stmt = stmt.where(Instrument.instrument_type == type.upper())
 
     stmt = stmt.order_by(Instrument.tradingsymbol).limit(limit)
     result = await db.execute(stmt)

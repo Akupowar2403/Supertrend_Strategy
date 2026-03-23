@@ -697,6 +697,12 @@
             <option value="BSE">BSE</option>
             <option value="MCX">MCX</option>
           </select>
+          <select class="exch-select" id="typeSelect" style="display:none;">
+            <option value="">ALL</option>
+            <option value="FUT">FUT</option>
+            <option value="CE">CE</option>
+            <option value="PE">PE</option>
+          </select>
         </div>
         <div class="sym-dropdown" id="symDropdown"></div>
       </div>
@@ -1011,6 +1017,7 @@ const wsDot        = document.getElementById('wsDot');
 const wsLabel      = document.getElementById('wsLabel');
 const symInput     = document.getElementById('symInput');
 const exchSelect   = document.getElementById('exchSelect');
+const typeSelect   = document.getElementById('typeSelect');
 const symDropdown  = document.getElementById('symDropdown');
 const symSelected  = document.getElementById('symSelected');
 const selTicker    = document.getElementById('selTicker');
@@ -1077,16 +1084,27 @@ symInput.addEventListener('input', () => {
 });
 
 exchSelect.addEventListener('change', () => {
+  // show Type filter only for NFO
+  typeSelect.style.display = exchSelect.value === 'NFO' ? '' : 'none';
+  if (exchSelect.value !== 'NFO') typeSelect.value = '';
+  const q = symInput.value.trim();
+  if (q.length >= 2) doSearch(q);
+});
+
+typeSelect.addEventListener('change', () => {
   const q = symInput.value.trim();
   if (q.length >= 2) doSearch(q);
 });
 
 async function doSearch(query) {
   const exchange = exchSelect.value;
+  const type     = typeSelect.value;
+  let url = `/api/instruments?query=${encodeURIComponent(query)}&exchange=${exchange}&limit=20`;
+  if (type) url += `&type=${type}`;
   symDropdown.innerHTML = `<div class="drop-msg">Searching...</div>`;
   symDropdown.classList.add('open');
   try {
-    const res  = await fetch(`/api/instruments?query=${encodeURIComponent(query)}&exchange=${exchange}&limit=12`);
+    const res  = await fetch(url);
     const data = await res.json();
     renderDropdown(data);
   } catch {
@@ -1441,6 +1459,7 @@ btnStart.addEventListener('click', () => {
     token:    APP.symbol.token,
     qty:      parseInt(qtyInput.value) || 1,
     interval: APP.interval,
+    exchange: APP.symbol.exchange,
   });
 });
 

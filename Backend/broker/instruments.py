@@ -8,6 +8,7 @@ Usage:
     await get_instrument(db, "INFY", "NSE")      # get single instrument token
 """
 
+import asyncio
 from datetime import date
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,18 +19,32 @@ from models.instrument import Instrument
 
 EXCHANGES = ["NSE", "NFO", "BSE", "MCX"]
 
+# For NFO, only store NIFTY and BANKNIFTY contracts (futures + options).
+# Full NFO has 200k+ rows — we don't need FINNIFTY, MIDCPNIFTY, stocks, etc.
+_NFO_PREFIXES = ("NIFTY", "BANKNIFTY")
+
+
+def _keep_nfo(symbol: str) -> bool:
+    """Return True if an NFO instrument should be stored."""
+    return symbol.startswith(_NFO_PREFIXES)
+
 
 async def refresh_instruments(kite: KiteConnect, db: AsyncSession) -> int:
     """
-    Fetch all instruments from Zerodha for NSE, NFO, BSE.
+    Fetch instruments from Zerodha for NSE, NFO, BSE, MCX.
+    NFO is filtered to NIFTY and BANKNIFTY only (futures + options).
     Clears old records and inserts fresh ones.
     Returns total count saved.
     """
     total = 0
 
     for exchange in EXCHANGES:
-        # Fetch from Zerodha API
-        raw = kite.instruments(exchange=exchange)
+        # Fetch from Zerodha API — run in thread to avoid blocking the event loop
+        raw = await asyncio.to_thread(kite.instruments, exchange)
+
+        # NFO: keep only NIFTY / BANKNIFTY contracts
+        if exchange == "NFO":
+            raw = [i for i in raw if _keep_nfo(i["tradingsymbol"])]
 
         # Delete existing records for this exchange
         await db.execute(delete(Instrument).where(Instrument.exchange == exchange))

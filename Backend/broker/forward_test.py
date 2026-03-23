@@ -55,6 +55,7 @@ class ForwardTestBroker(BrokerABC):
         product:          str,   # "MIS" etc.
         order_type:       str,   # "MARKET" etc.
         price:            float = 0,
+        exchange:         str   = "NSE",
     ) -> str:
         """
         Simulate order placement.

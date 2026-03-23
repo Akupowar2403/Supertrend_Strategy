@@ -205,7 +205,7 @@ fastapi_app.include_router(admin_router)
 
 @fastapi_app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    return templates.TemplateResponse(request, "dashboard.html")
 
 
 @fastapi_app.get("/", response_class=HTMLResponse)
@@ -238,16 +238,22 @@ async def index(request: Request, request_token: str | None = None, status: str 
                 await db.commit()
 
             zeroda.init_ticker(_access_token)
-            return templates.TemplateResponse("index.html", {
-                "request":      request,
+
+            try:
+                async with async_session() as db:
+                    total = await refresh_instruments(zeroda.kite, db)
+                    log.info("OAuth login: %d instruments refreshed", total)
+            except Exception as exc:
+                log.error("OAuth login: instrument refresh failed: %s", exc)
+
+            return templates.TemplateResponse(request, "index.html", {
                 "logged_in":    True,
                 "user_name":    profile["user_name"],
                 "user_id":      profile["user_id"],
                 "access_token": _access_token,
             })
         except Exception as exc:
-            return templates.TemplateResponse("index.html", {
-                "request":   request,
+            return templates.TemplateResponse(request, "index.html", {
                 "logged_in": False,
                 "error":     str(exc),
                 "login_url": zeroda.get_login_url(),
@@ -267,16 +273,14 @@ async def index(request: Request, request_token: str | None = None, status: str 
         valid, result = zeroda.verify_token(account.access_token)
         if valid:
             profile = result
-            return templates.TemplateResponse("index.html", {
-                "request":      request,
+            return templates.TemplateResponse(request, "index.html", {
                 "logged_in":    True,
                 "user_name":    profile["user_name"],
                 "user_id":      profile["user_id"],
                 "access_token": account.access_token,
             })
 
-    return templates.TemplateResponse("index.html", {
-        "request":   request,
+    return templates.TemplateResponse(request, "index.html", {
         "logged_in": False,
         "login_url": zeroda.get_login_url(),
     })
@@ -390,6 +394,7 @@ async def on_engine_start(sid, data: dict):
     token    = data.get("token")
     qty      = data.get("qty", 1)
     interval = data.get("interval", settings.timeframe)
+    exchange = data.get("exchange", "NSE")
 
     if not symbol or not token:
         await sio.emit("error", {"message": "symbol and token are required"}, to=sid)
@@ -403,6 +408,7 @@ async def on_engine_start(sid, data: dict):
             symbol           = symbol,
             qty              = int(qty),
             interval         = interval,
+            exchange         = exchange,
         )
         _engine.start()
         await emit("engine:state", _engine.status())
@@ -481,6 +487,7 @@ async def on_mode_switch(sid, data: dict):
         token    = _engine.instrument_token
         qty      = _engine.qty
         interval = _engine.interval
+        exchange = _engine.exchange
 
         _engine.stop()
         broker  = create_broker(_access_token)
@@ -490,6 +497,7 @@ async def on_mode_switch(sid, data: dict):
             symbol           = symbol,
             qty              = qty,
             interval         = interval,
+            exchange         = exchange,
         )
         _engine.start()
         log.info("Engine restarted in %s mode", mode.upper())

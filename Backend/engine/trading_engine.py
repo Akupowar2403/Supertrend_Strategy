@@ -65,12 +65,14 @@ class TradingEngine:
         qty:              int = 1,
         interval:         str = None,
         candle_count:     int = 100,
+        exchange:         str = "NSE",
     ):
         self.broker           = broker
         self.instrument_token = instrument_token
         self.symbol           = symbol
         self.qty              = qty
         self.interval         = interval or settings.timeframe
+        self.exchange         = exchange
         self.candle_count     = candle_count
 
         self.state            = EngineState.IDLE
@@ -330,6 +332,7 @@ class TradingEngine:
                     symbol=self.symbol, token=self.instrument_token,
                     qty=position.get("qty", self.qty), transaction_type="SELL",
                     product="MIS", order_type="MARKET",
+                    exchange=self.exchange,
                 )
                 emit_sync("order:placed", {
                     "type": "SELL", "symbol": self.symbol,
@@ -369,6 +372,7 @@ class TradingEngine:
                     symbol=self.symbol, token=self.instrument_token,
                     qty=self.qty, transaction_type="BUY",
                     product="MIS", order_type="MARKET",
+                    exchange=self.exchange,
                 )
                 emit_sync("order:placed", {
                     "type": "BUY", "symbol": self.symbol,
@@ -417,7 +421,7 @@ class TradingEngine:
                 symbol=self.symbol, token=self.instrument_token,
                 qty=qty, transaction_type="SELL",
                 product="MIS", order_type="MARKET",
-                price=exit_price,
+                price=exit_price, exchange=self.exchange,
             )
             emit_sync("order:placed", {
                 "type": "SELL", "symbol": self.symbol,

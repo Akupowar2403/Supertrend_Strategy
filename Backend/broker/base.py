@@ -14,7 +14,8 @@ class BrokerABC(ABC):
     @abstractmethod
     def place_order(self, symbol: str, token: int, qty: int,
                     transaction_type: str, product: str,
-                    order_type: str, price: float = 0) -> str: ...
+                    order_type: str, price: float = 0,
+                    exchange: str = "NSE") -> str: ...
 
     @abstractmethod
     def cancel_order(self, order_id: str) -> None: ...
