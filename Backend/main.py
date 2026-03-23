@@ -458,6 +458,35 @@ async def on_indicator_toggle(sid, data: dict):
     await emit("indicator:state", {"name": name, "enabled": enabled})
 
 
+@sio.on("indicator:settings")
+async def on_indicator_settings(sid, data: dict):
+    """
+    Update indicator parameters at runtime (no engine restart needed).
+    data for supertrend: {name: "supertrend", length: int, multiplier: float}
+    data for atr:        {name: "atr", period: int, threshold: float}
+    """
+    name = data.get("name")
+
+    if name == "supertrend":
+        length     = int(data.get("length", settings.st_length))
+        multiplier = float(data.get("multiplier", settings.st_multiplier))
+        settings.st_length     = length
+        settings.st_multiplier = multiplier
+        log.info("Supertrend settings updated — length=%d multiplier=%.1f", length, multiplier)
+        await emit("indicator:settings:applied", {"name": "supertrend", "length": length, "multiplier": multiplier})
+
+    elif name == "atr":
+        period    = int(data.get("period", settings.atr_period))
+        threshold = float(data.get("threshold", settings.atr_threshold))
+        settings.atr_period    = period
+        settings.atr_threshold = threshold
+        log.info("ATR settings updated — period=%d threshold=%.2f", period, threshold)
+        await emit("indicator:settings:applied", {"name": "atr", "period": period, "threshold": threshold})
+
+    else:
+        await sio.emit("error", {"message": f"Unknown indicator: {name}"}, to=sid)
+
+
 @sio.on("mode:switch")
 async def on_mode_switch(sid, data: dict):
     """

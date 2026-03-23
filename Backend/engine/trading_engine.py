@@ -222,12 +222,12 @@ class TradingEngine:
 
         if new_candle:
             # Roll buffer left by 1 → insert new candle at end
-            np.roll(self._opens,   -1, out=self._opens);   self._opens[-1]   = float(latest_row["open"])
-            np.roll(self._highs,   -1, out=self._highs);   self._highs[-1]   = float(latest_row["high"])
-            np.roll(self._lows,    -1, out=self._lows);    self._lows[-1]    = float(latest_row["low"])
-            np.roll(self._closes,  -1, out=self._closes);  self._closes[-1]  = float(latest_row["close"])
-            np.roll(self._volumes, -1, out=self._volumes); self._volumes[-1] = float(latest_row["volume"])
-            np.roll(self._timestamps, -1, out=self._timestamps); self._timestamps[-1] = latest_ts
+            self._opens[:-1]      = self._opens[1:];      self._opens[-1]      = float(latest_row["open"])
+            self._highs[:-1]      = self._highs[1:];      self._highs[-1]      = float(latest_row["high"])
+            self._lows[:-1]       = self._lows[1:];       self._lows[-1]       = float(latest_row["low"])
+            self._closes[:-1]     = self._closes[1:];     self._closes[-1]     = float(latest_row["close"])
+            self._volumes[:-1]    = self._volumes[1:];    self._volumes[-1]    = float(latest_row["volume"])
+            self._timestamps[:-1] = self._timestamps[1:]; self._timestamps[-1] = latest_ts
 
             self._last_candle_ts = latest_ts
 

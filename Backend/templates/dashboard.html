@@ -364,6 +364,94 @@
   .ind-badge.enabled  { background: var(--green-bg);  color: var(--green); border: 1px solid var(--green-bdr); }
   .ind-badge.disabled { background: var(--bg4);        color: var(--text3); border: 1px solid var(--border); }
 
+  .ind-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ind-gear-btn {
+    width: 26px; height: 26px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .ind-gear-btn:hover { background: var(--bg4); color: var(--blue); border-color: var(--blue-bdr); }
+
+  /* ── Settings popup ── */
+  .sp-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+  }
+  .sp-overlay.show { display: block; }
+
+  .sp-popup {
+    position: fixed;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    width: 230px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    z-index: 401;
+  }
+  .sp-popup-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sp-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .sp-field label { font-size: 12px; color: var(--text2); }
+  .sp-field input {
+    width: 90px;
+    padding: 5px 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    text-align: right;
+  }
+  .sp-field input:focus { outline: none; border-color: var(--blue); }
+  .sp-hint { font-size: 10px; color: var(--text3); margin-bottom: 12px; }
+  .sp-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .sp-btn {
+    flex: 1;
+    padding: 6px 0;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .sp-btn.cancel { background: var(--bg4); color: var(--text2); border: 1px solid var(--border); }
+  .sp-btn.apply  { background: var(--green); color: #fff; }
+  .sp-btn.cancel:hover { background: var(--bg3); }
+  .sp-btn.apply:hover  { opacity: 0.85; }
+
   /* Toggle switch */
   .toggle-switch { position: relative; display: inline-block; cursor: pointer; }
   .toggle-switch input { display: none; }
@@ -753,7 +841,10 @@
             <div class="ind-desc">Trend direction signal</div>
           </div>
         </div>
-        <div class="ind-badge enabled" id="stBadge">ON</div>
+        <div class="ind-right">
+          <div class="ind-badge enabled" id="stBadge">ON</div>
+          <button class="ind-gear-btn" id="btnSTGear" title="Supertrend settings">⚙</button>
+        </div>
       </div>
 
       <div class="ind-row" id="indATR">
@@ -767,7 +858,10 @@
             <div class="ind-desc">Volatility filter</div>
           </div>
         </div>
-        <div class="ind-badge enabled" id="atrBadge">ON</div>
+        <div class="ind-right">
+          <div class="ind-badge enabled" id="atrBadge">ON</div>
+          <button class="ind-gear-btn" id="btnATRGear" title="ATR settings">⚙</button>
+        </div>
       </div>
     </div>
 
@@ -976,37 +1070,51 @@
         </div>
       </div>
 
-      <!-- Signals history -->
-      <div>
-        <div class="section-title">
-          📋 Previous Signals
-          <button id="btnRefreshSignals" style="margin-left:auto;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;">↻ Refresh</button>
-        </div>
-        <div class="signals-table-wrap">
-          <table class="signals-table">
-            <thead>
-              <tr>
-                <th>Symbol</th>
-                <th>Entry</th>
-                <th>Exit</th>
-                <th>P&amp;L pts</th>
-                <th>P&amp;L ₹</th>
-                <th>Result</th>
-                <th>Reason</th>
-                <th>Time</th>
-              </tr>
-            </thead>
-            <tbody id="signalsBody">
-              <tr><td colspan="8" class="sig-empty">No signals yet</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
 
     </div>
 
   </main>
 
+</div>
+
+<!-- ── Supertrend Settings Popup ── -->
+<div class="sp-overlay" id="spSTOverlay">
+  <div class="sp-popup" id="spSTPopup">
+    <div class="sp-popup-title">⚙ Supertrend Settings</div>
+    <div class="sp-field">
+      <label>Length</label>
+      <input type="number" id="spSTLength" value="10" min="1" max="200" step="1">
+    </div>
+    <div class="sp-field">
+      <label>Multiplier</label>
+      <input type="number" id="spSTMult" value="3.0" min="0.1" max="20" step="0.1">
+    </div>
+    <div class="sp-hint">Tip: lower length + multiplier = faster signals</div>
+    <div class="sp-actions">
+      <button class="sp-btn cancel" id="btnSTCancel">Cancel</button>
+      <button class="sp-btn apply"  id="btnSTApply">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ATR Settings Popup ── -->
+<div class="sp-overlay" id="spATROverlay">
+  <div class="sp-popup" id="spATRPopup">
+    <div class="sp-popup-title">⚙ ATR Settings</div>
+    <div class="sp-field">
+      <label>Period</label>
+      <input type="number" id="spATRPeriod" value="14" min="1" max="200" step="1">
+    </div>
+    <div class="sp-field">
+      <label>Min Threshold</label>
+      <input type="number" id="spATRThresh" value="1.0" min="0" max="1000" step="0.1">
+    </div>
+    <div class="sp-hint">Entry blocked if ATR &lt; threshold</div>
+    <div class="sp-actions">
+      <button class="sp-btn cancel" id="btnATRCancel">Cancel</button>
+      <button class="sp-btn apply"  id="btnATRApply">Apply</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1546,12 +1654,34 @@ function wireEngineEvents(socket) {
   socket.on('exit:triggered', data => {
     console.log('[exit:triggered]', data);
     hidePositionPanel();
-    flashNotice(
-      `EXIT (${data.reason}) — P&L: ${data.pnl_amount > 0 ? '+' : ''}₹${data.pnl_amount?.toFixed(2)} (${data.result})`,
-      data.result === 'PROFIT' ? 'green' : 'red',
-    );
+
+    const pnlPts = data.pnl_points ?? 0;
+    const pnlAmt = data.pnl_amount ?? 0;
+    const result = data.result || (pnlAmt >= 0 ? 'PROFIT' : 'LOSS');
+    const cls    = result === 'PROFIT' ? 'profit' : 'loss';
+    const sign   = pnlAmt >= 0 ? '+' : '';
+
+    // Complete the pending BUY row with exit details + P&L
+    const pending = document.getElementById('ft-pending-row');
+    if (pending) {
+      pending.removeAttribute('id');
+      pending.innerHTML = `
+        <td><span class="ft-side buy">BUY→SELL</span></td>
+        <td>${data.entry_price?.toFixed(2) ?? '—'}</td>
+        <td>${data.exit_price?.toFixed(2) ?? '—'}</td>
+        <td class="${cls}">${pnlPts >= 0 ? '+' : ''}${pnlPts.toFixed(2)}</td>
+        <td class="${cls}">${sign}₹${pnlAmt.toFixed(2)}</td>
+        <td><span class="sig-result ${cls}">${result}</span></td>`;
+    }
+
+    // Update summary counters directly from running totals
     loadFTSummary();
     loadSignals();
+
+    flashNotice(
+      `EXIT (${data.reason}) — entry ${data.entry_price?.toFixed(2)} → exit ${data.exit_price?.toFixed(2)} | P&L: ${sign}₹${pnlAmt.toFixed(2)} (${result})`,
+      result === 'PROFIT' ? 'green' : 'red',
+    );
   });
 
   socket.on('mode:state', data => {
@@ -1631,18 +1761,25 @@ async function loadFTSummary() {
 }
 
 function addFTOrderRow(data) {
-  // Live order log entry (BUY or SELL) shown immediately in the FT log
   ftSummaryPanel.style.display = 'block';
   const body = document.getElementById('ftLogBody');
   const emptyRow = body.querySelector('.sig-empty');
   if (emptyRow) body.innerHTML = '';
-  const side = data.type === 'BUY' ? 'buy' : 'sell';
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td><span class="ft-side ${side}">${data.type}</span></td>
-    <td colspan="4" style="color:var(--text2);">${data.symbol} × ${data.qty} @ ${data.price?.toFixed(2)}</td>
-    <td style="color:var(--text3);">pending</td>`;
-  body.insertBefore(row, body.firstChild);
+
+  if (data.type === 'BUY') {
+    // Add a pending row tagged so exit can find and complete it
+    const row = document.createElement('tr');
+    row.id = 'ft-pending-row';
+    row.innerHTML = `
+      <td><span class="ft-side buy">BUY</span></td>
+      <td id="ft-pending-entry">${data.price?.toFixed(2)}</td>
+      <td style="color:var(--text3);">—</td>
+      <td style="color:var(--text3);">—</td>
+      <td style="color:var(--text3);">—</td>
+      <td style="color:var(--text3);">pending</td>`;
+    body.insertBefore(row, body.firstChild);
+  }
+  // SELL rows are handled by completeFTRow via exit:triggered — don't add a separate row
 }
 
 // ── Flash notification (top of live section) ──────────────────────────────────
@@ -1866,6 +2003,92 @@ document.getElementById('btnRefreshPort').addEventListener('click', () => {
 // ══════════════════════════════════════
 checkLogin();
 loadTimeframes();
+
+// ══════════════════════════════════════
+//  INDICATOR SETTINGS POPUPS
+// ══════════════════════════════════════
+
+// Current applied values (shown as placeholders)
+const _stDefaults  = { length: 10, multiplier: 3.0 };
+const _atrDefaults = { period: 14, threshold: 1.0 };
+
+function positionPopup(popup, btn) {
+  const r = btn.getBoundingClientRect();
+  const pw = 230, ph = 180;
+  let top  = r.bottom + 6;
+  let left = r.right - pw;
+  if (left < 8) left = 8;
+  if (top + ph > window.innerHeight - 8) top = r.top - ph - 6;
+  popup.style.top  = top  + 'px';
+  popup.style.left = left + 'px';
+}
+
+// ── Supertrend popup ──────────────────────
+const btnSTGear    = document.getElementById('btnSTGear');
+const spSTOverlay  = document.getElementById('spSTOverlay');
+const spSTPopup    = document.getElementById('spSTPopup');
+const spSTLength   = document.getElementById('spSTLength');
+const spSTMult     = document.getElementById('spSTMult');
+
+btnSTGear.addEventListener('click', (e) => {
+  e.stopPropagation();
+  spATROverlay.classList.remove('show');
+  spSTOverlay.classList.add('show');
+  positionPopup(spSTPopup, btnSTGear);
+  spSTLength.value = _stDefaults.length;
+  spSTMult.value   = _stDefaults.multiplier;
+  spSTLength.focus();
+});
+spSTOverlay.addEventListener('click', () => spSTOverlay.classList.remove('show'));
+spSTPopup.addEventListener('click', (e) => e.stopPropagation());
+
+document.getElementById('btnSTCancel').addEventListener('click', () => spSTOverlay.classList.remove('show'));
+document.getElementById('btnSTApply').addEventListener('click', () => {
+  const length     = parseInt(spSTLength.value, 10);
+  const multiplier = parseFloat(spSTMult.value);
+  if (isNaN(length) || length < 1 || isNaN(multiplier) || multiplier <= 0) return;
+  _stDefaults.length     = length;
+  _stDefaults.multiplier = multiplier;
+  spSTOverlay.classList.remove('show');
+  if (APP.socket) {
+    APP.socket.emit('indicator:settings', { name: 'supertrend', length, multiplier });
+  }
+  // update desc
+  document.querySelector('#indST .ind-desc').textContent = `Len ${length} · ×${multiplier}`;
+});
+
+// ── ATR popup ─────────────────────────────
+const btnATRGear   = document.getElementById('btnATRGear');
+const spATROverlay = document.getElementById('spATROverlay');
+const spATRPopup   = document.getElementById('spATRPopup');
+const spATRPeriod  = document.getElementById('spATRPeriod');
+const spATRThresh  = document.getElementById('spATRThresh');
+
+btnATRGear.addEventListener('click', (e) => {
+  e.stopPropagation();
+  spSTOverlay.classList.remove('show');
+  spATROverlay.classList.add('show');
+  positionPopup(spATRPopup, btnATRGear);
+  spATRPeriod.value = _atrDefaults.period;
+  spATRThresh.value = _atrDefaults.threshold;
+  spATRPeriod.focus();
+});
+spATROverlay.addEventListener('click', () => spATROverlay.classList.remove('show'));
+spATRPopup.addEventListener('click', (e) => e.stopPropagation());
+
+document.getElementById('btnATRCancel').addEventListener('click', () => spATROverlay.classList.remove('show'));
+document.getElementById('btnATRApply').addEventListener('click', () => {
+  const period    = parseInt(spATRPeriod.value, 10);
+  const threshold = parseFloat(spATRThresh.value);
+  if (isNaN(period) || period < 1 || isNaN(threshold) || threshold < 0) return;
+  _atrDefaults.period    = period;
+  _atrDefaults.threshold = threshold;
+  spATROverlay.classList.remove('show');
+  if (APP.socket) {
+    APP.socket.emit('indicator:settings', { name: 'atr', period, threshold });
+  }
+  document.querySelector('#indATR .ind-desc').textContent = `Period ${period} · Min ${threshold}`;
+});
 </script>
 </body>
 </html>
