@@ -78,104 +78,120 @@ export default function DashboardPage() {
   return (
     <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-raised">
 
-      {/* ════════════════ TRADE SETUP BAR — horizontal strip ════════════════ */}
-      <div className="shrink-0 bg-surface border-b border-edge px-5 py-3 flex items-center gap-4 flex-wrap">
+      {/* ════════════════ PAGE HEADER ════════════════════════════════════════ */}
+      <div className="shrink-0 bg-surface border-b border-edge px-8 py-5">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-xs font-bold text-brand-600 uppercase tracking-widest mb-1">Dashboard</p>
+            <h1 className="font-display text-2xl font-black text-ink">Trading Engine</h1>
+          </div>
+          {tick?.timestamp && (
+            <span className="text-sm font-mono text-ghost tabular-nums pb-0.5">
+              {tick.timestamp.slice(11, 19)}
+            </span>
+          )}
+        </div>
+      </div>
 
-        {/* Mode toggle */}
-        <div className="flex items-center shrink-0 bg-sunken border border-edge rounded-xl p-1 gap-1">
-          <button
-            onClick={() => switchMode({ mode: 'forward_test' })}
-            disabled={engineState === 'RUNNING' || engineState === 'PAUSED'}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:cursor-not-allowed ${
-              engine.brokerMode === 'forward_test'
-                ? 'bg-white text-brand-700 shadow-sm border border-edge'
-                : 'text-subtle hover:text-muted'
-            }`}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 shrink-0">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" />
-            </svg>
-            Virtual
-          </button>
-          <button
-            onClick={() => switchMode({ mode: 'live' })}
-            disabled={engineState === 'RUNNING' || engineState === 'PAUSED'}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:cursor-not-allowed ${
-              engine.brokerMode === 'live'
-                ? 'bg-white text-profit shadow-sm border border-profit-border'
-                : 'text-subtle hover:text-muted'
-            }`}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 shrink-0">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Live
-          </button>
+      {/* ════════════════ ENGINE SETUP BAR ═══════════════════════════════════ */}
+      <div className="shrink-0 bg-surface border-b border-edge px-8 py-4 flex items-end gap-6">
+
+        {/* Mode */}
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <span className="text-2xs font-bold text-subtle uppercase tracking-widest">Mode</span>
+          <div className="flex items-center bg-sunken border border-edge rounded-xl p-1 gap-1">
+            <button
+              onClick={() => switchMode({ mode: 'forward_test' })}
+              disabled={engineState === 'RUNNING' || engineState === 'PAUSED'}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all disabled:cursor-not-allowed ${
+                engine.brokerMode === 'forward_test'
+                  ? 'bg-white text-brand-700 shadow-sm border border-edge'
+                  : 'text-subtle hover:text-muted'
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 shrink-0">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" />
+              </svg>
+              Virtual
+            </button>
+            <button
+              onClick={() => switchMode({ mode: 'live' })}
+              disabled={engineState === 'RUNNING' || engineState === 'PAUSED'}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all disabled:cursor-not-allowed ${
+                engine.brokerMode === 'live'
+                  ? 'bg-white text-profit shadow-sm border border-profit-border'
+                  : 'text-subtle hover:text-muted'
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 shrink-0">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Live
+            </button>
+          </div>
         </div>
 
-        <div className="w-px h-5 bg-edge shrink-0" />
+        <div className="w-px h-12 bg-edge shrink-0" />
 
         {/* Qty */}
-        <div className="flex items-center gap-2 shrink-0">
-          <label className="text-xs text-muted">Qty</label>
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <span className="text-2xs font-bold text-subtle uppercase tracking-widest">Quantity</span>
           <input
             type="number" min={1} value={qtyInput}
             onChange={e => setQtyInput(e.target.value)}
-            className="w-20 bg-sunken border border-edge rounded-lg px-2.5 py-1.5 text-sm font-mono text-ink tabular-nums text-center focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-50 transition-all"
+            className="w-24 bg-sunken border border-edge rounded-xl px-3 py-2 text-sm font-mono font-bold text-ink tabular-nums text-center focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-50 transition-all"
           />
         </div>
 
-        <div className="w-px h-5 bg-edge shrink-0" />
+        <div className="w-px h-12 bg-edge shrink-0" />
 
         {/* Engine controls */}
-        <div className="flex items-center gap-2 shrink-0">
-          {(engineState === 'IDLE' || engineState === 'STOPPED') && (
-            <button
-              onClick={handleStart}
-              disabled={!sym || !engine.selectedTimeframe}
-              className="h-8 px-4 rounded-lg text-xs font-black tracking-wider bg-profit hover:bg-profit-light text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-[0.97]"
-            >
-              ▶ START
-            </button>
-          )}
-          {(engineState === 'RUNNING' || engineState === 'PAUSED') && (
-            <>
-              {engineState === 'RUNNING' ? (
-                <button onClick={pauseEngine}
-                  className="h-8 px-4 rounded-lg text-xs font-bold bg-warn-bg hover:bg-amber-100 text-warn border border-warn-border transition-colors">
-                  ⏸ Pause
-                </button>
-              ) : (
-                <button onClick={resumeEngine}
-                  className="h-8 px-4 rounded-lg text-xs font-bold bg-profit-bg hover:bg-emerald-100 text-profit border border-profit-border transition-colors">
-                  ▶ Resume
-                </button>
-              )}
-              <button onClick={stopEngine}
-                className="h-8 px-4 rounded-lg text-xs font-bold bg-loss-bg hover:bg-red-100 text-loss border border-loss-border transition-colors">
-                ■ Stop
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <span className="text-2xs font-bold text-subtle uppercase tracking-widest">Controls</span>
+          <div className="flex items-center gap-2">
+            {(engineState === 'IDLE' || engineState === 'STOPPED') && (
+              <button
+                onClick={handleStart}
+                disabled={!sym || !engine.selectedTimeframe}
+                className="h-10 px-6 rounded-xl text-sm font-black tracking-wide bg-profit hover:bg-profit-light text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-[0.97] shadow-sm"
+              >
+                ▶ START
               </button>
-            </>
-          )}
+            )}
+            {(engineState === 'RUNNING' || engineState === 'PAUSED') && (
+              <>
+                {engineState === 'RUNNING' ? (
+                  <button onClick={pauseEngine}
+                    className="h-10 px-5 rounded-xl text-sm font-bold bg-warn-bg hover:bg-amber-100 text-warn border border-warn-border transition-colors">
+                    ⏸ Pause
+                  </button>
+                ) : (
+                  <button onClick={resumeEngine}
+                    className="h-10 px-5 rounded-xl text-sm font-bold bg-profit-bg hover:bg-emerald-100 text-profit border border-profit-border transition-colors">
+                    ▶ Resume
+                  </button>
+                )}
+                <button onClick={stopEngine}
+                  className="h-10 px-5 rounded-xl text-sm font-bold bg-loss-bg hover:bg-red-100 text-loss border border-loss-border transition-colors">
+                  ■ Stop
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Engine state badge */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className={`w-1.5 h-1.5 rounded-full ${
+        {/* Engine state */}
+        <div className="flex items-center gap-2 pb-0.5 shrink-0">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${
             engineState === 'RUNNING' ? 'bg-profit animate-pulse' :
             engineState === 'PAUSED'  ? 'bg-warn' : 'bg-ghost'
           }`} />
-          <span className={`text-xs font-semibold ${
+          <span className={`text-sm font-bold ${
             engineState === 'RUNNING' ? 'text-profit' :
             engineState === 'PAUSED'  ? 'text-warn'   : 'text-subtle'
           }`}>{engineState}</span>
         </div>
 
-        {tick?.timestamp && (
-          <span className="ml-auto text-xs font-mono text-ghost tabular-nums shrink-0">
-            {tick.timestamp.slice(11, 19)}
-          </span>
-        )}
       </div>
 
       {/* ════════════════ LIVE DATA CARDS ════════════════════════════════════ */}
