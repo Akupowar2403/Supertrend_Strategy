@@ -202,15 +202,18 @@ export interface Timeframe {
 }
 
 export interface Instrument {
-  token:    number
-  symbol:   string
-  name:     string
-  exchange: Exchange
-  segment:  string
-  type:     InstrumentType
-  lot_size: number
-  expiry:   string | null
-  strike:   number | null
+  token:     number
+  symbol:    string
+  name:      string
+  exchange:  Exchange
+  segment:   string
+  type:      InstrumentType
+  lot_size:  number
+  expiry:    string | null
+  // List endpoint (/api/instruments)  → present, Detail endpoint (/api/instruments/:token) → absent
+  strike?:   number | null
+  // Detail endpoint (/api/instruments/:token) → present, List endpoint → absent
+  tick_size?: number
 }
 
 export interface Trade {
