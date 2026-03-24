@@ -380,10 +380,6 @@ async def on_engine_start(sid, data: dict):
         await sio.emit("error", {"message": "Not logged in — no access token"}, to=sid)
         return
 
-    if _engine and _engine.state.value == "RUNNING":
-        await sio.emit("error", {"message": "Engine already running"}, to=sid)
-        return
-
     symbol   = data.get("symbol")
     token    = data.get("token")
     qty      = data.get("qty", 1)
@@ -395,6 +391,18 @@ async def on_engine_start(sid, data: dict):
         return
 
     try:
+        # If same symbol is already running/paused/stopped → just resume (no new thread)
+        if _engine and _engine.instrument_token == int(token) and _engine._thread and _engine._thread.is_alive():
+            _engine.qty = int(qty)
+            _engine.resume()
+            await emit("engine:state", _engine.status())
+            log.info("Engine resumed: %s qty=%d", symbol, qty)
+            return
+
+        # Kill old thread if it exists (different symbol or dead thread)
+        if _engine:
+            _engine.shutdown()
+
         broker  = create_broker(_access_token)
         _engine = TradingEngine(
             broker           = broker,
@@ -414,12 +422,11 @@ async def on_engine_start(sid, data: dict):
 
 @sio.on("engine:stop")
 async def on_engine_stop(sid, data: dict):
-    global _engine
     if not _engine:
         return
+    # Exit positions + block orders — loop keeps running (data/indicators continue)
     _engine.stop()
     await emit("engine:state", _engine.status())
-    _engine = None
 
 
 @sio.on("engine:pause")

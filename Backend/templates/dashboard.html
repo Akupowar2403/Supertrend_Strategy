@@ -1535,7 +1535,7 @@ async function loadSignals() {
   }
 }
 
-document.getElementById('btnRefreshSignals').addEventListener('click', loadSignals);
+document.getElementById('btnRefreshSignals')?.addEventListener('click', loadSignals);
 document.getElementById('btnRefreshFT').addEventListener('click', loadFTSummary);
 
 // ══════════════════════════════════════
