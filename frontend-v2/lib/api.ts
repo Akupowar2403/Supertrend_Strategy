@@ -48,11 +48,12 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message =
-      error.response?.data?.detail ||
-      error.response?.data?.message ||
-      error.message ||
+    const raw =
+      error.response?.data?.detail ??
+      error.response?.data?.message ??
+      error.message ??
       'Unknown error'
+    const message = typeof raw === 'string' ? raw : JSON.stringify(raw)
     console.error(`[API] ${error.config?.method?.toUpperCase()} ${error.config?.url} — ${message}`)
     return Promise.reject(new Error(message))
   }

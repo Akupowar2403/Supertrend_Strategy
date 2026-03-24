@@ -100,8 +100,9 @@ function _registerEventHandlers(s: Socket): void {
   })
 
   s.on('connect_error', (err) => {
-    console.error('[Socket] Connection error —', err.message)
-    eventBus.emit(EVENTS.SOCKET_ERROR, { message: err.message })
+    const msg = err.message || 'Could not reach backend — is it running?'
+    console.error('[Socket] Connection error —', msg)
+    eventBus.emit(EVENTS.SOCKET_ERROR, { message: msg })
   })
 
   // ── Engine events ─────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import {
   connectSocket, disconnectSocket,
   startEngine, stopEngine, pauseEngine, resumeEngine,
   subscribeIndicators, unsubscribeIndicators,
+  switchMode,
 } from '@/lib/socket'
 import { getStatus, getTimeframes, getTrades } from '@/lib/api'
 
@@ -80,26 +81,37 @@ export default function DashboardPage() {
       {/* ════════════════ TRADE SETUP BAR — horizontal strip ════════════════ */}
       <div className="shrink-0 bg-surface border-b border-edge px-5 py-3 flex items-center gap-4 flex-wrap">
 
-        {/* Symbol info */}
-        {sym ? (
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="font-display text-sm font-bold text-ink">{sym.symbol}</span>
-            {sym.strike && (
-              <span className="text-xs font-mono text-muted">@ ₹{sym.strike}</span>
-            )}
-            {sym.expiry && (
-              <span className="text-xs text-subtle">{sym.expiry}</span>
-            )}
-            <span className={`text-2xs font-bold px-1.5 py-0.5 rounded-md ${
-              sym.type === 'CE'  ? 'bg-profit-bg text-profit border border-profit-border' :
-              sym.type === 'PE'  ? 'bg-loss-bg text-loss border border-loss-border'       :
-              sym.type === 'FUT' ? 'bg-brand-100 text-brand-700 border border-brand-200'  :
-              'bg-sunken text-muted border border-edge'
-            }`}>{sym.type}</span>
-          </div>
-        ) : (
-          <span className="text-sm text-subtle shrink-0">No symbol selected</span>
-        )}
+        {/* Mode toggle */}
+        <div className="flex items-center shrink-0 bg-sunken border border-edge rounded-xl p-1 gap-1">
+          <button
+            onClick={() => switchMode({ mode: 'forward_test' })}
+            disabled={engineState === 'RUNNING' || engineState === 'PAUSED'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:cursor-not-allowed ${
+              engine.brokerMode === 'forward_test'
+                ? 'bg-white text-brand-700 shadow-sm border border-edge'
+                : 'text-subtle hover:text-muted'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 shrink-0">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" />
+            </svg>
+            Virtual
+          </button>
+          <button
+            onClick={() => switchMode({ mode: 'live' })}
+            disabled={engineState === 'RUNNING' || engineState === 'PAUSED'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all disabled:cursor-not-allowed ${
+              engine.brokerMode === 'live'
+                ? 'bg-white text-profit shadow-sm border border-profit-border'
+                : 'text-subtle hover:text-muted'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5 shrink-0">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Live
+          </button>
+        </div>
 
         <div className="w-px h-5 bg-edge shrink-0" />
 
@@ -159,16 +171,11 @@ export default function DashboardPage() {
           }`}>{engineState}</span>
         </div>
 
-        <div className="ml-auto flex items-center gap-1.5 shrink-0">
-          <span className="text-xs text-subtle">
-            {engine.brokerMode === 'live' ? '⚡ Live' : '◎ Simulation'}
+        {tick?.timestamp && (
+          <span className="ml-auto text-xs font-mono text-ghost tabular-nums shrink-0">
+            {tick.timestamp.slice(11, 19)}
           </span>
-          {tick?.timestamp && (
-            <span className="text-xs font-mono text-ghost tabular-nums ml-3">
-              {tick.timestamp.slice(11, 19)}
-            </span>
-          )}
-        </div>
+        )}
       </div>
 
       {/* ════════════════ LIVE DATA CARDS ════════════════════════════════════ */}

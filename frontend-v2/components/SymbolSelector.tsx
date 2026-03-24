@@ -50,7 +50,7 @@ export function SymbolSelector({ selected, onSelect }: Props) {
 
   async function handleSearch(q: string) {
     setQuery(q)
-    if (!q.trim()) { setResults([]); return }
+    if (q.trim().length < 2) { setResults([]); return }
     setSearching(true)
     try {
       const params: Parameters<typeof searchInstruments>[0] = {
@@ -87,23 +87,9 @@ export function SymbolSelector({ selected, onSelect }: Props) {
         className="flex items-center gap-3 h-11 px-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all min-w-[240px] group"
       >
         {selected ? (
-          <div className="flex flex-col min-w-0 flex-1 text-left">
-            <div className="flex items-center gap-1.5">
-              <span className="font-display text-sm font-bold text-ink leading-tight truncate">
-                {selected.symbol}
-              </span>
-              <TypeBadge type={selected.type} />
-            </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-2xs font-medium text-subtle">{selected.exchange}</span>
-              {selected.expiry && (
-                <>
-                  <span className="text-2xs text-ghost">·</span>
-                  <span className="text-2xs text-subtle">{selected.expiry}</span>
-                </>
-              )}
-            </div>
-          </div>
+          <span className="font-display text-sm font-bold text-ink truncate flex-1 text-left">
+            {selected.symbol}
+          </span>
         ) : (
           <span className="text-sm font-medium text-subtle flex-1 text-left">Select symbol</span>
         )}
