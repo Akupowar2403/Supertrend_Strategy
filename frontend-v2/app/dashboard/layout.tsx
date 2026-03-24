@@ -11,8 +11,9 @@ import type { ReactNode } from 'react'
 import { IndicatorsPanel } from '@/components/IndicatorsPanel'
 import { LayoutNav }      from '@/components/LayoutNav'
 
-type ExTab   = 'NSE' | 'BSE' | 'NFO'
+type ExTab   = 'NSE' | 'BSE' | 'NFO' | 'MCX'
 type NfoType = 'FUT' | 'CE' | 'PE'
+type McxType = 'FUT' | 'CE' | 'PE'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { state: auth }                            = useAuth()
@@ -22,6 +23,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [symbolOpen, setSymbolOpen] = useState(false)
   const [exTab,      setExTab]      = useState<ExTab>('NSE')
   const [nfoType,    setNfoType]    = useState<NfoType>('FUT')
+  const [mcxType,    setMcxType]    = useState<McxType>('FUT')
   const [query,      setQuery]      = useState('')
   const [results,    setResults]    = useState<Instrument[]>([])
   const [searching,  setSearching]  = useState(false)
@@ -51,6 +53,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     try {
       const params: Parameters<typeof searchInstruments>[0] = { query: q.trim(), limit: 15, exchange: exTab }
       if (exTab === 'NFO') params.type = nfoType
+      if (exTab === 'MCX') params.type = mcxType
       setResults(await searchInstruments(params))
     } catch { /* ignore */ }
     setSearching(false)
@@ -115,7 +118,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
               {/* Exchange tabs */}
               <div className="flex border-b border-slate-100">
-                {(['NSE', 'BSE', 'NFO'] as const).map(tab => (
+                {(['NSE', 'BSE', 'NFO', 'MCX'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => { setExTab(tab); setResults([]) }}
@@ -139,6 +142,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                       onClick={() => { setNfoType(t); setResults([]) }}
                       className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors ${
                         nfoType === t
+                          ? t === 'CE' ? 'bg-emerald-100 text-emerald-700'
+                            : t === 'PE' ? 'bg-red-100 text-red-700'
+                            : 'bg-blue-100 text-blue-700'
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* MCX sub-type */}
+              {exTab === 'MCX' && (
+                <div className="flex gap-1.5 px-3 pt-2.5 pb-1">
+                  {(['FUT', 'CE', 'PE'] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => { setMcxType(t); setResults([]) }}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors ${
+                        mcxType === t
                           ? t === 'CE' ? 'bg-emerald-100 text-emerald-700'
                             : t === 'PE' ? 'bg-red-100 text-red-700'
                             : 'bg-blue-100 text-blue-700'

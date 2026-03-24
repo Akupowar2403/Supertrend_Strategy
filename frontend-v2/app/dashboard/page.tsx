@@ -172,7 +172,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ════════════════ LIVE DATA CARDS ════════════════════════════════════ */}
-      <div className="shrink-0 grid grid-cols-4 border-b border-edge">
+      <div className="shrink-0 grid grid-cols-3 border-b border-edge">
 
         {/* Price */}
         <LiveCard
@@ -215,50 +215,6 @@ export default function DashboardPage() {
           tag={<span className="text-xs text-subtle">volatility</span>}
         />
 
-        {/* Engine controls */}
-        <div className="bg-surface border-l border-edge px-6 py-5 flex flex-col gap-3">
-          <p className="text-2xs font-bold text-subtle uppercase tracking-widest">Engine</p>
-          <div className="flex flex-col gap-2">
-            {(engineState === 'IDLE' || engineState === 'STOPPED') && (
-              <button
-                onClick={handleStart}
-                disabled={!sym || !engine.selectedTimeframe}
-                className="w-full py-2 rounded-lg text-xs font-black tracking-wider bg-profit hover:bg-profit-light text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-[0.97]"
-              >
-                ▶ START
-              </button>
-            )}
-            {(engineState === 'RUNNING' || engineState === 'PAUSED') && (
-              <div className="flex gap-1.5">
-                {engineState === 'RUNNING' ? (
-                  <button onClick={pauseEngine}
-                    className="flex-1 py-2 rounded-lg text-xs font-bold bg-warn-bg hover:bg-amber-100 text-warn border border-warn-border transition-colors">
-                    ⏸ Pause
-                  </button>
-                ) : (
-                  <button onClick={resumeEngine}
-                    className="flex-1 py-2 rounded-lg text-xs font-bold bg-profit-bg hover:bg-emerald-100 text-profit border border-profit-border transition-colors">
-                    ▶ Resume
-                  </button>
-                )}
-                <button onClick={stopEngine}
-                  className="flex-1 py-2 rounded-lg text-xs font-bold bg-loss-bg hover:bg-red-100 text-loss border border-loss-border transition-colors">
-                  ■ Stop
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 mt-auto">
-            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-              engineState === 'RUNNING' ? 'bg-profit animate-pulse' :
-              engineState === 'PAUSED'  ? 'bg-warn' : 'bg-ghost'
-            }`} />
-            <span className={`text-xs font-semibold ${
-              engineState === 'RUNNING' ? 'text-profit' :
-              engineState === 'PAUSED'  ? 'text-warn'   : 'text-subtle'
-            }`}>{engineState}</span>
-          </div>
-        </div>
 
       </div>
 
