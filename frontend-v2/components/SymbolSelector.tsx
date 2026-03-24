@@ -129,8 +129,8 @@ export function SymbolSelector({ selected, onSelect }: Props) {
               <div className="px-5 pt-5 pb-4 border-b border-slate-100/80">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-sm font-bold text-ink">Select Instrument</p>
-                    <p className="text-2xs text-subtle mt-0.5">Search across exchanges</p>
+                    <p className="font-display text-base font-black text-ink tracking-tight">Select Instrument</p>
+                    <p className="text-xs text-muted mt-0.5">NSE · BSE · NFO · MCX</p>
                   </div>
                   <button
                     onClick={() => setOpen(false)}

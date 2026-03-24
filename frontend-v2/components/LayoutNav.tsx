@@ -75,7 +75,7 @@ export function LayoutNav() {
   }
 
   return (
-    <nav className="shrink-0 w-64 bg-surface border-r border-edge flex flex-col overflow-y-auto">
+    <nav className="shrink-0 w-72 bg-surface border-r border-edge flex flex-col overflow-y-auto">
 
       {/* Nav items */}
       <div className="flex-1 p-3 flex flex-col gap-1">

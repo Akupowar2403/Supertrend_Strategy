@@ -47,13 +47,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50 text-slate-900 font-sans antialiased">
 
       {/* ══════════════════════ TOP BAR ═════════════════════════════════════ */}
-      <header className="shrink-0 h-16 bg-white border-b border-slate-200 flex items-center px-5 gap-2">
+      <header className="shrink-0 h-16 bg-white border-b border-slate-200 flex items-center gap-2">
 
-        {/* Logo */}
-        <div className="flex items-center gap-0.5 shrink-0 select-none">
+        {/* Logo — same width as sidebar so controls align above content */}
+        <div className="w-72 shrink-0 flex items-center px-5 border-r border-slate-200 h-full select-none">
           <span className="font-display text-xl font-black tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-brand-400 uppercase">SWTS</span>
         </div>
-        <div className="w-px h-6 bg-slate-200 shrink-0 mx-2" />
+
+        {/* ── Controls — starts exactly where content starts ────────────────── */}
+        <div className="flex items-center gap-2 px-5">
 
         {/* ── Symbol selector ──────────────────────────────────────────────── */}
         <SymbolSelector
@@ -61,24 +63,23 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           onSelect={handleSymbolSelect}
         />
 
+        <div className="w-px h-6 bg-slate-200 shrink-0 mx-1" />
+
         {/* ── Timeframe dropdown ──────────────────────────────────────────── */}
         <div className="relative" ref={tfRef}>
 
           {/* Trigger */}
           <button
-            onClick={() => { setTfOpen(v => !v); setSymbolOpen(false) }}
+            onClick={() => { setTfOpen(v => !v) }}
             className={`flex items-center gap-3 h-11 px-4 rounded-xl border transition-all min-w-[120px] ${
               tfOpen
                 ? 'border-brand-400 bg-white ring-2 ring-brand-50 shadow-sm'
                 : 'border-slate-200 bg-slate-50 hover:bg-white hover:border-slate-300 hover:shadow-sm'
             }`}
           >
-            <div className="flex flex-col text-left flex-1">
-              <span className="text-2xs font-medium text-ghost uppercase tracking-wider">Interval</span>
-              <span className={`text-sm font-bold leading-tight mt-0.5 ${engine.selectedTimeframe ? 'text-ink' : 'text-subtle'}`}>
-                {engine.selectedTimeframe?.label ?? '—'}
-              </span>
-            </div>
+            <span className={`text-sm font-semibold ${engine.selectedTimeframe ? 'text-ink' : 'text-subtle'}`}>
+              {engine.selectedTimeframe?.label ?? 'Timeframe'}
+            </span>
             <svg className="w-3.5 h-3.5 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
@@ -110,7 +111,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* ── Indicators button ───────────────────────────────────────────── */}
         <button
-          onClick={() => { setIndOpen(v => !v); setSymbolOpen(false); setTfOpen(false) }}
+          onClick={() => { setIndOpen(v => !v); setTfOpen(false) }}
           className={`flex items-center gap-2.5 h-11 px-4 rounded-xl border transition-all ${
             indOpen
               ? 'border-brand-400 bg-brand-50 text-brand-700 ring-2 ring-brand-50 shadow-sm'
@@ -120,28 +121,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 shrink-0">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
           </svg>
-          <div className="flex flex-col text-left">
-            <span className="text-2xs font-medium text-ghost uppercase tracking-wider">Configure</span>
-            <span className="text-sm font-bold text-ink leading-tight mt-0.5">Indicators</span>
-          </div>
+          <span className="text-sm font-semibold text-ink">Indicators</span>
         </button>
 
-        {/* ── WS status (right) ───────────────────────────────────────────── */}
-        <div className="ml-auto flex items-center gap-3">
-          <div className="w-px h-6 bg-slate-200 shrink-0" />
-          <div className="flex flex-col items-end">
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full shrink-0 ${
-                auth.wsConnected
-                  ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]'
-                  : 'bg-slate-300'
-              }`} />
-              <span className={`text-sm font-bold ${auth.wsConnected ? 'text-emerald-600' : 'text-subtle'}`}>
-                {auth.wsConnected ? 'Connected' : 'Offline'}
-              </span>
-            </div>
-            <span className="text-2xs text-ghost mt-0.5">
-              {auth.wsConnected ? 'Live data streaming' : 'No connection'}
+        </div>{/* end centre controls */}
+
+        {/* ── WS status — pinned right ─────────────────────────────────────── */}
+        <div className="ml-auto flex items-center gap-2 shrink-0">
+          <div className="w-px h-6 bg-slate-200" />
+          <div className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${
+              auth.wsConnected
+                ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]'
+                : 'bg-slate-300'
+            }`} />
+            <span className={`text-sm font-semibold ${auth.wsConnected ? 'text-emerald-600' : 'text-subtle'}`}>
+              {auth.wsConnected ? 'Connected' : 'Offline'}
             </span>
           </div>
         </div>
