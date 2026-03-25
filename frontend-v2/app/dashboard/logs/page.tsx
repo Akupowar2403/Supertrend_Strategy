@@ -56,19 +56,23 @@ export default function LogsPage() {
         </div>
       </div>
 
-      {/* ── Level strip ───────────────────────────────────────────────────── */}
-      <div
-        className="shrink-0 grid grid-cols-4"
-        style={{ borderBottom: '1px solid var(--theme-glass-border)' }}
-      >
-        <LevelCard label="Errors"   count={counts.ERROR}
-          color="var(--theme-loss)"          barBg="var(--theme-loss-bg)"   barBorder="var(--theme-loss-border)" />
-        <LevelCard label="Warnings" count={counts.WARNING}
-          color="var(--theme-warn)"          barBg="var(--theme-warn-bg)"   barBorder="var(--theme-warn-border)"  border />
-        <LevelCard label="Info"     count={counts.INFO}
-          color="var(--theme-accent)"        barBg="var(--theme-accent-soft)" barBorder="var(--theme-accent-border)" border />
-        <LevelCard label="Debug"    count={counts.DEBUG}
-          color="var(--theme-text-muted)"    barBg="var(--theme-glass-card)"  barBorder="var(--theme-glass-border)"  border />
+      {/* ── Level cards ───────────────────────────────────────────────────── */}
+      <div className="shrink-0 px-6 py-4 relative overflow-hidden"
+        style={{ borderBottom: '1px solid var(--theme-glass-border)' }}>
+        {/* Blue sprinkle glow */}
+        <div className="absolute -top-8 right-16 w-64 h-20 rounded-full pointer-events-none"
+          style={{ background: 'var(--theme-accent)', filter: 'blur(48px)', opacity: 0.18 }} />
+
+        <div className="relative grid grid-cols-4 gap-4">
+          <LevelCard label="Errors"   count={counts.ERROR}
+            color="var(--theme-loss)"       bg="var(--theme-loss-bg)"     border="var(--theme-loss-border)"   barBg="var(--theme-loss-bg)"    barBorder="var(--theme-loss-border)" />
+          <LevelCard label="Warnings" count={counts.WARNING}
+            color="var(--theme-warn)"       bg="var(--theme-warn-bg)"     border="var(--theme-warn-border)"   barBg="var(--theme-warn-bg)"    barBorder="var(--theme-warn-border)" />
+          <LevelCard label="Info"     count={counts.INFO}
+            color="var(--theme-accent)"     bg="var(--theme-accent-soft)" border="var(--theme-accent-border)" barBg="var(--theme-accent-soft)" barBorder="var(--theme-accent-border)" />
+          <LevelCard label="Debug"    count={counts.DEBUG}
+            color="var(--theme-text-muted)" bg="var(--theme-glass-card)"  border="var(--theme-glass-border)"  barBg="var(--theme-glass-panel)" barBorder="var(--theme-glass-border)" />
+        </div>
       </div>
 
       {/* ── Log stream ────────────────────────────────────────────────────── */}
@@ -164,20 +168,25 @@ export default function LogsPage() {
 
 // ── LevelCard ─────────────────────────────────────────────────────────────────
 
-function LevelCard({ label, count, color, barBg, barBorder, border }: {
+function LevelCard({ label, count, color, bg, border, barBg, barBorder }: {
   label:     string
   count:     number
   color:     string
+  bg:        string
+  border:    string
   barBg:     string
   barBorder: string
-  border?:   boolean
 }) {
   return (
     <div
-      className="px-8 py-5"
-      style={{ borderLeft: border ? '1px solid var(--theme-glass-border)' : 'none' }}
+      className="rounded-2xl px-6 py-5"
+      style={{
+        background:     bg,
+        border:         `1px solid ${border}`,
+        backdropFilter: 'blur(20px) saturate(160%)',
+      }}
     >
-      <p className="text-xs uppercase tracking-widest mb-2"
+      <p className="text-xs uppercase tracking-widest mb-2.5 font-semibold"
         style={{ color: 'var(--theme-text-muted)' }}>
         {label}
       </p>
@@ -186,14 +195,17 @@ function LevelCard({ label, count, color, barBg, barBorder, border }: {
         {count}
       </p>
       {/* Progress bar */}
-      <div
-        className="mt-2 h-1 rounded-full transition-all"
-        style={{
-          width:      `${Math.min(count * 4, 100)}%`,
-          background: count > 0 ? barBg     : 'var(--theme-glass-border)',
-          border:     count > 0 ? `1px solid ${barBorder}` : 'none',
-        }}
-      />
+      <div className="mt-3 h-1 w-full rounded-full overflow-hidden"
+        style={{ background: 'var(--theme-glass-border)' }}>
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width:      `${Math.min(count * 4, 100)}%`,
+            background: count > 0 ? color : 'transparent',
+            boxShadow:  count > 0 ? `0 0 6px ${color}` : 'none',
+          }}
+        />
+      </div>
     </div>
   )
 }

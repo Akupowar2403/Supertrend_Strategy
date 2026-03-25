@@ -60,24 +60,30 @@ export default function TradesPage() {
         </div>
       </div>
 
-      {/* ── Stat strip ────────────────────────────────────────────────────── */}
-      <div
-        className="shrink-0 grid grid-cols-4"
-        style={{ borderBottom: '1px solid var(--theme-glass-border)' }}
-      >
-        <StatCard label="Total Trades"  value={String(trades.length)}
-          valueColor="var(--theme-text-primary)" />
-        <StatCard label="Win Rate"      value={`${winRate}%`}
-          valueColor="var(--theme-accent)"  border />
-        <StatCard label="Wins / Losses" value={`${wins} / ${losses}`}
-          valueColor="var(--theme-text-primary)" border />
-        <StatCard
-          label="Net P&L"
-          value={`${netPnl >= 0 ? '+' : ''}₹${netPnl.toFixed(2)}`}
-          valueColor={netPnl >= 0 ? 'var(--theme-profit)' : 'var(--theme-loss)'}
-          glow={netPnl >= 0 ? 'var(--theme-profit-glow)' : 'var(--theme-loss-glow)'}
-          border
-        />
+      {/* ── Stat cards ────────────────────────────────────────────────────── */}
+      <div className="shrink-0 px-6 py-4 relative overflow-hidden"
+        style={{ borderBottom: '1px solid var(--theme-glass-border)' }}>
+        {/* Blue sprinkle glow — top-right, like dashboard hero */}
+        <div className="absolute -top-8 right-16 w-64 h-20 rounded-full pointer-events-none"
+          style={{ background: 'var(--theme-accent)', filter: 'blur(48px)', opacity: 0.18 }} />
+
+        <div className="relative grid grid-cols-4 gap-4">
+          <StatCard label="Total Trades"  value={String(trades.length)}
+            valueColor="var(--theme-text-primary)" />
+          <StatCard label="Win Rate"      value={`${winRate}%`}
+            valueColor="var(--theme-accent)"
+            accentBg accentBorder />
+          <StatCard label="Wins / Losses" value={`${wins} / ${losses}`}
+            valueColor="var(--theme-text-primary)" />
+          <StatCard
+            label="Net P&L"
+            value={`${netPnl >= 0 ? '+' : ''}₹${netPnl.toFixed(2)}`}
+            valueColor={netPnl >= 0 ? 'var(--theme-profit)' : 'var(--theme-loss)'}
+            glow={netPnl >= 0 ? 'var(--theme-profit-glow)' : 'var(--theme-loss-glow)'}
+            profitCard={netPnl >= 0}
+            lossCard={netPnl < 0}
+          />
+        </div>
       </div>
 
       {/* ── Table ─────────────────────────────────────────────────────────── */}
@@ -198,19 +204,37 @@ export default function TradesPage() {
 
 // ── StatCard ──────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, valueColor, glow, border }: {
-  label:      string
-  value:      string
-  valueColor: string
-  glow?:      string
-  border?:    boolean
+function StatCard({ label, value, valueColor, glow, accentBg, accentBorder, profitCard, lossCard }: {
+  label:        string
+  value:        string
+  valueColor:   string
+  glow?:        string
+  accentBg?:    boolean
+  accentBorder?: boolean
+  profitCard?:  boolean
+  lossCard?:    boolean
 }) {
+  const bg     = accentBg   ? 'var(--theme-accent-soft)'
+                : profitCard ? 'var(--theme-profit-bg)'
+                : lossCard   ? 'var(--theme-loss-bg)'
+                : 'var(--theme-glass-card)'
+  const border = accentBorder ? 'var(--theme-accent-border)'
+                : profitCard   ? 'var(--theme-profit-border)'
+                : lossCard     ? 'var(--theme-loss-border)'
+                : 'var(--theme-glass-border)'
+
   return (
     <div
-      className="px-8 py-5"
-      style={{ borderLeft: border ? '1px solid var(--theme-glass-border)' : 'none' }}
+      className="rounded-2xl px-6 py-5"
+      style={{
+        background:     bg,
+        border:         `1px solid ${border}`,
+        backdropFilter: 'blur(20px) saturate(160%)',
+        boxShadow:      glow ? `inset 0 0 0 1px ${border}, ${glow}` : undefined,
+      }}
     >
-      <p className="text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--theme-text-muted)' }}>
+      <p className="text-xs uppercase tracking-widest mb-2.5 font-semibold"
+        style={{ color: 'var(--theme-text-muted)' }}>
         {label}
       </p>
       <p
