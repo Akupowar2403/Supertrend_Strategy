@@ -79,9 +79,7 @@ export function LayoutNav() {
 
       {/* Nav items */}
       <div className="flex-1 p-3 flex flex-col gap-1">
-        <p className="text-2xs font-bold text-ghost uppercase tracking-widest px-2 py-2">Pages</p>
-
-        {NAV.map(item => {
+{NAV.map(item => {
           const active = isActive(item.href)
           return (
             <Link

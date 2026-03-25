@@ -58,8 +58,6 @@ services:
   frontend:
     build:
       context: ../frontend-v2
-      args:
-        NEXT_PUBLIC_BACKEND_URL: http://localhost:8000
     container_name: swts_frontend
     restart: unless-stopped
     ports:
