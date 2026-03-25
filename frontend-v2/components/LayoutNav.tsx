@@ -1,7 +1,8 @@
 'use client'
 
 import Link            from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAuth }     from '@/store/AuthStore'
 
 const NAV = [
   {
@@ -66,12 +67,23 @@ const NAV = [
 ]
 
 export function LayoutNav() {
-  const pathname = usePathname()
+  const pathname          = usePathname()
+  const router            = useRouter()
+  const { state: auth, logout } = useAuth()
 
   function isActive(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard'
     return pathname.startsWith(href)
   }
+
+  function handleLogout() {
+    logout()
+    router.replace('/')
+  }
+
+  const initials = auth.userName
+    ? auth.userName.slice(0, 2).toUpperCase()
+    : '?'
 
   return (
     <nav className="glass-panel shrink-0 w-72 flex flex-col overflow-y-auto">
@@ -160,14 +172,62 @@ export function LayoutNav() {
         })}
       </div>
 
-      {/* Footer */}
+      {/* User block */}
       <div
-        className="shrink-0 px-4 py-3"
+        className="shrink-0 px-4 py-4"
         style={{ borderTop: '1px solid var(--theme-glass-border)' }}
       >
-        <p className="text-2xs" style={{ color: 'var(--theme-text-ghost)' }}>
-          Supertrend & ATR Trading System
-        </p>
+        {/* Avatar + name row */}
+        <div className="flex items-center gap-3 mb-3">
+          {/* Avatar circle */}
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm"
+            style={{
+              background: 'var(--theme-accent-soft)',
+              border:     '1px solid var(--theme-accent-border)',
+              color:      'var(--theme-accent)',
+            }}
+          >
+            {initials}
+          </div>
+
+          {/* Name + role */}
+          <div className="min-w-0 flex-1">
+            <p
+              className="text-sm font-semibold truncate leading-tight"
+              style={{ color: 'var(--theme-text-primary)' }}
+            >
+              {auth.userName || 'User'}
+            </p>
+            <p
+              className="text-2xs mt-0.5"
+              style={{ color: 'var(--theme-text-muted)' }}
+            >
+              Trader
+            </p>
+          </div>
+        </div>
+
+        {/* Logout button */}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-150"
+          style={{
+            background: 'var(--theme-loss-bg)',
+            border:     '1px solid var(--theme-loss-border)',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
+            className="w-4 h-4 shrink-0" style={{ color: 'var(--theme-loss)' }}>
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span className="text-sm font-semibold" style={{ color: 'var(--theme-loss)' }}>
+            Logout
+          </span>
+        </button>
       </div>
 
     </nav>
