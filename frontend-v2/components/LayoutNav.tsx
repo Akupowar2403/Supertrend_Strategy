@@ -128,7 +128,7 @@ export function LayoutNav() {
               }}
             >
               {/* Icon */}
-              <span style={{ color: active ? 'var(--theme-accent)' : 'var(--theme-text-ghost)' }}>
+              <span style={{ color: active ? 'var(--theme-accent)' : 'var(--theme-text-muted)' }}>
                 {item.icon}
               </span>
 
@@ -142,7 +142,7 @@ export function LayoutNav() {
                 </p>
                 <p
                   className="text-2xs mt-0.5 truncate"
-                  style={{ color: 'var(--theme-text-ghost)' }}
+                  style={{ color: 'var(--theme-text-muted)' }}
                 >
                   {item.description}
                 </p>
