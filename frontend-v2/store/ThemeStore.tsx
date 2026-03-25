@@ -47,7 +47,11 @@ const ThemeContext = createContext<ThemeContextValue | null>(null)
 // reference them as var(--theme-*) in inline styles or global CSS.
 
 function applyTheme(theme: Theme) {
-  const s = document.documentElement.style
+  const root = document.documentElement
+  const s    = root.style
+
+  // data-theme attribute — used by CSS overrides (e.g. [data-theme="light"])
+  root.setAttribute('data-theme', theme.id)
 
   // ── Gradient ────────────────────────────────────────────────────────────────
   s.setProperty('--theme-gradient', theme.gradient.css)

@@ -393,10 +393,83 @@ const ocean: Theme = {
   },
 }
 
+// ── 5. Light ──────────────────────────────────────────────────────────────────
+// The original clean white theme.
+// No glassmorphism — solid surfaces with subtle shadows, exactly as before.
+// backdrop-filter has no visible effect on solid backgrounds, which is correct.
+
+const light: Theme = {
+  id:          'light',
+  name:        'Light',
+  description: 'Clean white — classic professional trading interface',
+
+  gradient: {
+    from:  '#f8fafc',
+    via:   '#f1f5f9',
+    to:    '#e2e8f0',
+    angle: 180,
+    css:   'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+  },
+
+  glass: {
+    // Solid white surfaces — no transparency needed on a light background
+    card:         '#ffffff',
+    panel:        '#ffffff',
+    topbar:       '#ffffff',
+    border:       '#e2e8f0',   // slate-200
+    borderStrong: '#cbd5e1',   // slate-300
+    shadow:       '0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.05)',
+  },
+
+  // Original ink/slate text hierarchy — high contrast on white
+  text: {
+    primary:   '#0f172a',   // slate-900
+    secondary: '#334155',   // slate-700
+    muted:     '#64748b',   // slate-500
+    ghost:     '#94a3b8',   // slate-400
+  },
+
+  accent: {
+    color:  '#2563eb',                          // brand blue-600
+    soft:   'rgba(37, 99, 235, 0.07)',          // blue-50 equivalent
+    border: 'rgba(37, 99, 235, 0.22)',          // blue-200 equivalent
+    glow:   '0 0 0 rgba(37, 99, 235, 0)',       // no glow on light theme
+  },
+
+  profit: {
+    text:   '#059669',   // emerald-600 — original profit color
+    bg:     '#ecfdf5',   // emerald-50
+    border: '#a7f3d0',   // emerald-200
+    glow:   '0 0 0 rgba(5, 150, 105, 0)',       // no glow on light theme
+  },
+
+  loss: {
+    text:   '#dc2626',   // red-600
+    bg:     '#fef2f2',   // red-50
+    border: '#fecaca',   // red-200
+    glow:   '0 0 0 rgba(220, 38, 38, 0)',       // no glow on light theme
+  },
+
+  warn: {
+    text:   '#d97706',   // amber-600
+    bg:     '#fffbeb',   // amber-50
+    border: '#fde68a',   // amber-200
+  },
+
+  input: {
+    bg:          '#f1f5f9',   // slate-100 — sunken feel
+    border:      '#e2e8f0',   // slate-200
+    focusBorder: '#2563eb',   // brand blue
+    focusRing:   'rgba(37, 99, 235, 0.15)',
+    text:        '#0f172a',   // slate-900
+    placeholder: '#94a3b8',   // slate-400
+  },
+}
+
 // ── Exports ───────────────────────────────────────────────────────────────────
 
 /** All available themes in display order */
-export const THEMES: Theme[] = [midnight, aurora, cosmic, ocean]
+export const THEMES: Theme[] = [light, midnight, aurora, cosmic, ocean]
 
 /** Theme shown on first load (before user picks one) */
 export const DEFAULT_THEME_ID: ThemeId = 'midnight'
