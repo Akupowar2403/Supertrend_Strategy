@@ -410,24 +410,10 @@ export default function DashboardPage() {
         <LiveCard
           label="Price"
           value={tick ? `₹${tick.close.toFixed(2)}` : '—'}
-          valueColor={dirColor}
-          valueShadow={isGreen ? '0 0 16px var(--theme-profit)' : isRed ? '0 0 16px var(--theme-loss)' : 'none'}
-          bg={isGreen ? 'var(--theme-profit-bg)' : isRed ? 'var(--theme-loss-bg)' : 'var(--theme-glass-card)'}
-          borderColor={isGreen ? 'var(--theme-profit-border)' : isRed ? 'var(--theme-loss-border)' : 'var(--theme-glass-border)'}
+          valueColor="var(--theme-text-primary)"
+          bg="var(--theme-glass-card)"
+          borderColor="var(--theme-glass-border)"
           accentBar={isGreen ? 'var(--theme-profit)' : isRed ? 'var(--theme-loss)' : 'var(--theme-text-ghost)'}
-          glowColor={isGreen ? 'var(--theme-profit)' : isRed ? 'var(--theme-loss)' : undefined}
-          tag={tick ? (
-            <span
-              className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg"
-              style={{
-                color:      dirColor,
-                background: isGreen ? 'var(--theme-profit-bg)' : isRed ? 'var(--theme-loss-bg)' : 'var(--theme-glass-card)',
-                border:     `1px solid ${isGreen ? 'var(--theme-profit-border)' : isRed ? 'var(--theme-loss-border)' : 'var(--theme-glass-border)'}`,
-              }}
-            >
-              {isGreen ? '▲ BULL' : isRed ? '▼ BEAR' : '— FLAT'}
-            </span>
-          ) : null}
         />
 
         {/* Supertrend */}
@@ -435,21 +421,20 @@ export default function DashboardPage() {
           label="Supertrend"
           value={tick?.supertrend != null ? `₹${tick.supertrend.toFixed(2)}` : '—'}
           valueColor={dirColor}
-          valueShadow={isGreen ? '0 0 16px var(--theme-profit)' : isRed ? '0 0 16px var(--theme-loss)' : 'none'}
-          bg={isGreen ? 'var(--theme-profit-bg)' : isRed ? 'var(--theme-loss-bg)' : 'var(--theme-glass-card)'}
-          borderColor={isGreen ? 'var(--theme-profit-border)' : isRed ? 'var(--theme-loss-border)' : 'var(--theme-glass-border)'}
+          bg="var(--theme-glass-card)"
+          borderColor="var(--theme-glass-border)"
           accentBar={isGreen ? 'var(--theme-profit)' : isRed ? 'var(--theme-loss)' : 'var(--theme-text-ghost)'}
-          glowColor={isGreen ? 'var(--theme-profit)' : isRed ? 'var(--theme-loss)' : undefined}
           tag={tick ? (
             <span
               className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg"
               style={{
-                color:      dirColor,
+                color:      isGreen ? 'var(--theme-profit)' : isRed ? 'var(--theme-loss)' : 'var(--theme-text-muted)',
                 background: isGreen ? 'var(--theme-profit-bg)' : isRed ? 'var(--theme-loss-bg)' : 'var(--theme-glass-card)',
                 border:     `1px solid ${isGreen ? 'var(--theme-profit-border)' : isRed ? 'var(--theme-loss-border)' : 'var(--theme-glass-border)'}`,
+                boxShadow:  isGreen ? 'var(--theme-profit-glow)' : isRed ? 'var(--theme-loss-glow)' : 'none',
               }}
             >
-              {isGreen ? '▲ GREEN' : isRed ? '▼ RED' : '— ' + (tick.direction ?? 'FLAT')}
+              {isGreen ? '▲ BULL' : isRed ? '▼ BEAR' : '— FLAT'}
             </span>
           ) : null}
         />
@@ -459,11 +444,9 @@ export default function DashboardPage() {
           label="ATR"
           value={tick?.atr != null ? tick.atr.toFixed(2) : '—'}
           valueColor="var(--theme-accent)"
-          valueShadow="0 0 16px var(--theme-accent)"
           bg="var(--theme-accent-soft)"
           borderColor="var(--theme-accent-border)"
           accentBar="var(--theme-accent)"
-          glowColor="var(--theme-accent)"
           tag={
             <span
               className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg"
@@ -574,35 +557,26 @@ function ModeBtn({
 // ── LiveCard ──────────────────────────────────────────────────────────────────
 
 function LiveCard({
-  label, value, valueColor, valueShadow,
-  bg, borderColor, accentBar, glowColor, tag,
+  label, value, valueColor,
+  bg, borderColor, accentBar, tag,
 }: {
-  label:        string
-  value:        string
-  valueColor:   string
-  valueShadow?: string
-  bg:           string
-  borderColor:  string
-  accentBar:    string
-  glowColor?:   string
-  tag?:         React.ReactNode
+  label:       string
+  value:       string
+  valueColor:  string
+  bg:          string
+  borderColor: string
+  accentBar:   string
+  tag?:        React.ReactNode
 }) {
   return (
     <div
       className="rounded-2xl px-5 py-5 flex flex-col relative overflow-hidden"
       style={{
-        background: bg,
-        border:     `1px solid ${borderColor}`,
+        background:     bg,
+        border:         `1px solid ${borderColor}`,
+        backdropFilter: 'blur(20px) saturate(160%)',
       }}
     >
-      {/* Decorative corner glow */}
-      {glowColor && (
-        <div
-          className="absolute -top-8 -right-8 w-28 h-28 rounded-full opacity-[0.18] pointer-events-none"
-          style={{ background: glowColor, filter: 'blur(22px)' }}
-        />
-      )}
-
       {/* Left accent bar */}
       <div
         className="absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full"
@@ -615,7 +589,7 @@ function LiveCard({
         </p>
         <p
           className="font-display text-2xl font-bold tabular-nums font-mono leading-none"
-          style={{ color: valueColor, textShadow: valueShadow }}
+          style={{ color: valueColor }}
         >
           {value}
         </p>
