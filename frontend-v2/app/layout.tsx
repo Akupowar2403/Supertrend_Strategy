@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
-import { Providers } from '@/components/providers'
+import { Providers }     from '@/components/providers'
+import { themeScript }   from '@/lib/theme-script'
 import './globals.css'
 
 // ── Fonts ─────────────────────────────────────────────────────────────────────
@@ -34,6 +35,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning
       className={`${inter.variable} ${jakarta.variable} ${mono.variable}`}>
+      <head>
+        {/* Blocking script — sets CSS vars from localStorage before first paint.
+            Eliminates theme flash on reload. Must be inline, not async/defer. */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <Providers>
           {children}
