@@ -1,0 +1,114 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:        ${{ secrets.VPS_HOST }}
+          username:    ${{ secrets.VPS_USER }}
+          key:         ${{ secrets.VPS_SSH_KEY }}
+          timeout:     600s
+          script: |
+            set -e
+
+            # ── 1. Clone or pull repo ──────────────────────────────────────
+            if [ ! -d "/home/ubuntu/supertrend-strategy" ]; then
+              git clone https://github.com/Secret-Weapon-Trading-Solution-Pvt-Ltd/Supertrend_Strategy.git /home/ubuntu/supertrend-strategy
+            else
+              cd /home/ubuntu/supertrend-strategy && git pull origin main
+            fi
+
+            cd /home/ubuntu/supertrend-strategy/Backend
+
+            # ── 2. Write .env from GitHub secrets ─────────────────────────
+            cat > .env << 'ENVEOF'
+            KITE_API_KEY=${{ secrets.KITE_API_KEY }}
+            KITE_API_SECRET=${{ secrets.KITE_API_SECRET }}
+            KITE_USER_ID=${{ secrets.KITE_USER_ID }}
+            KITE_PASSWORD=${{ secrets.KITE_PASSWORD }}
+            KITE_TOTP_KEY=${{ secrets.KITE_TOTP_KEY }}
+            DATABASE_URL=postgresql+asyncpg://postgres:${{ secrets.POSTGRES_PASSWORD }}@swts_postgres:5432/postgres
+            FERNET_KEY=${{ secrets.FERNET_KEY }}
+            KEYCLOAK_URL=http://swts_keycloak:8080/auth
+            KEYCLOAK_REALM=SWTS
+            KEYCLOAK_CLIENT_ID=swts-backend
+            KEYCLOAK_CLIENT_SECRET=${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+            ENVEOF
+
+            # ── 3. Build and start containers ─────────────────────────────
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            KEYCLOAK_ADMIN_PASSWORD=${{ secrets.KEYCLOAK_ADMIN_PASSWORD }} \
+            KEYCLOAK_URL=https://trendedge.secretweapon.in/auth \
+            APP_URL=https://trendedge.secretweapon.in \
+            docker compose -f docker-compose.prod.yml up -d --build
+
+            # ── 4. Add nginx config block (idempotent) ────────────────────
+            NGINX_CONF="/home/ubuntu/trade-distributor/nginx/default.conf"
+
+            if ! grep -q "trendedge.secretweapon.in" "$NGINX_CONF"; then
+              cat >> "$NGINX_CONF" << 'NGINXEOF'
+
+            # ─── TrendEdge - trendedge.secretweapon.in ───────────────────────────────
+
+            server {
+                listen 80;
+                server_name trendedge.secretweapon.in;
+                location / { return 301 https://$host$request_uri; }
+            }
+
+            server {
+                listen 443 ssl;
+                http2 on;
+                server_name trendedge.secretweapon.in;
+
+                ssl_certificate     /etc/letsencrypt/live/trendedge.secretweapon.in/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/trendedge.secretweapon.in/privkey.pem;
+                ssl_protocols TLSv1.2 TLSv1.3;
+                ssl_session_cache shared:swts_ssl:10m;
+                add_header Strict-Transport-Security "max-age=63072000" always;
+
+                client_max_body_size 20M;
+
+                # Keycloak at /auth/
+                location /auth/ {
+                    proxy_pass http://swts_keycloak:8080/auth/;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_buffer_size 128k;
+                    proxy_buffers 4 256k;
+                    proxy_busy_buffers_size 256k;
+                }
+
+                # Frontend (proxies /api/* and /status to backend internally)
+                location / {
+                    proxy_pass http://swts_frontend:3000;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_read_timeout 120s;
+                }
+            }
+            NGINXEOF
+              echo "Nginx config added for trendedge.secretweapon.in"
+            else
+              echo "Nginx config already exists — skipping"
+            fi
+
+            # ── 5. Reload nginx ───────────────────────────────────────────
+            docker exec td_nginx nginx -t && docker exec td_nginx nginx -s reload
+            echo "✅ Deployment complete"
