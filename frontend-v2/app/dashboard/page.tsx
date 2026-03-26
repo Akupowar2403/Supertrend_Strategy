@@ -3,6 +3,18 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+const TOKEN_KEY = 'swts_access_token'
+
+function isTokenValid(token: string): boolean {
+  try {
+    const p       = token.split('.')[1]
+    const payload = JSON.parse(atob(p + '='.repeat((4 - p.length % 4) % 4)))
+    return payload.exp * 1000 > Date.now()
+  } catch {
+    return false
+  }
+}
+
 import { useAuth }   from '@/store/AuthStore'
 import { useEngine } from '@/store/EngineStore'
 import { useMarket } from '@/store/MarketStore'
@@ -47,10 +59,17 @@ export default function DashboardPage() {
   // ── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     async function init() {
+      // Gate on Keycloak token — Zerodha connection is independent of KC auth
+      const stored = typeof window !== 'undefined' ? (localStorage.getItem(TOKEN_KEY) ?? '') : ''
+      if (!isTokenValid(stored)) { router.replace('/'); return }
+
       try {
         const status = await getStatus()
-        if (!status.logged_in) { router.replace('/'); return }
-        setAuth(status.logged_in, status.user ?? '', status.user_id ?? '')
+        // Don't redirect when Zerodha is disconnected — that's a separate concern.
+        // Only redirect if the request itself fails (catch block below).
+        if (status.logged_in) {
+          setAuth(status.logged_in, status.user ?? '', status.user_id ?? '')
+        }
         setTickerStatus(status.ticker)
       } catch { router.replace('/'); return }
       try {
@@ -93,10 +112,6 @@ export default function DashboardPage() {
   const engineState = engine.engineState
   const sym         = engine.selectedSymbol
 
-  const stateColor =
-    engineState === 'RUNNING' ? 'var(--theme-profit)' :
-    engineState === 'PAUSED'  ? 'var(--theme-warn)'   :
-    'var(--theme-text-ghost)'
 
   const dirColor = isGreen
     ? 'var(--theme-profit)'
@@ -579,7 +594,7 @@ function LiveCard({
     >
       {/* Left accent bar */}
       <div
-        className="absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full"
+        className="absolute left-0 top-4 bottom-4 w-0.75 rounded-r-full"
         style={{ background: accentBar }}
       />
 
@@ -588,7 +603,7 @@ function LiveCard({
           {label}
         </p>
         <p
-          className="font-display text-2xl font-bold tabular-nums font-mono leading-none"
+          className="text-2xl font-bold tabular-nums font-mono leading-none"
           style={{ color: valueColor }}
         >
           {value}

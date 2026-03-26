@@ -41,6 +41,9 @@ export default function HomePage() {
     const params = new URLSearchParams(window.location.search)
     const code   = params.get('code')
 
+    // ── Case 0: Already showing error (pending/revoked) — do nothing ─────
+    if (params.get('error')) return
+
     // ── Case 1: Returning from Keycloak with ?code= ──────────────────────
     if (code) {
       window.history.replaceState({}, '', '/')
