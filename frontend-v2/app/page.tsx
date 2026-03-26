@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/store/AuthStore'
 import { getStatus, authLogin } from '@/lib/api'
 
 const KEYCLOAK_URL = process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:8080'
 const APP_URL      = process.env.NEXT_PUBLIC_APP_URL      || 'http://localhost:3000'
+const TOKEN_KEY    = 'swts_access_token'
 
 function isTokenValid(token: string): boolean {
   try {
@@ -29,12 +30,14 @@ function redirectToKeycloak() {
 }
 
 export default function HomePage() {
-  const router = useRouter()
-  const { state: auth, setAccessToken } = useAuth()
-  const [checking, setChecking] = useState(true)
-  const [error, setError]       = useState('')
+  const router          = useRouter()
+  const { setAccessToken } = useAuth()
+  const ran             = useRef(false)
 
   useEffect(() => {
+    if (ran.current) return
+    ran.current = true
+
     const params = new URLSearchParams(window.location.search)
     const code   = params.get('code')
 
@@ -44,71 +47,69 @@ export default function HomePage() {
       authLogin(code, APP_URL)
         .then(status => {
           if (status.keycloak_token) setAccessToken(status.keycloak_token)
-          if (status.logged_in) {
-            router.replace('/dashboard')
-          } else {
-            redirectToKeycloak()
-          }
+          router.replace('/dashboard')
         })
         .catch(err => {
           const reason = err?.response?.data?.reason
           const token  = err?.response?.data?.keycloak_token
           if (token) setAccessToken(token)
-          if (reason === 'pending') {
-            setError('Your account is pending admin approval. Please wait.')
-          } else if (reason === 'revoked') {
-            setError('Your account access has been revoked. Contact support.')
+          if (reason === 'pending' || reason === 'revoked') {
+            // Stay on page and show error via URL param so no state flash
+            window.location.replace(`/?error=${reason}`)
           } else {
-            setError(err.message || 'Could not reach backend')
+            redirectToKeycloak()
           }
-          setChecking(false)
         })
       return
     }
 
-    // ── Case 2: Valid Keycloak token in localStorage → skip round-trip ───
-    if (isTokenValid(auth.accessToken)) {
+    // ── Case 2: Valid token in localStorage → go straight to dashboard ───
+    const stored = localStorage.getItem(TOKEN_KEY) ?? ''
+    if (isTokenValid(stored)) {
       router.replace('/dashboard')
       return
     }
 
-    // ── Case 3: Check if Zerodha session is active ───────────────────────
+    // ── Case 3: Check Zerodha session ────────────────────────────────────
     getStatus()
       .then(status => {
-        if (status.logged_in) {
-          router.replace('/dashboard')
-        } else {
-          redirectToKeycloak()
-        }
+        if (status.logged_in) router.replace('/dashboard')
+        else redirectToKeycloak()
       })
       .catch(() => redirectToKeycloak())
-  }, [router, setAccessToken, auth.accessToken])
+  }, [router, setAccessToken])
 
-  if (checking) {
+  // Show error from ?error= param (pending / revoked)
+  const errorParam = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('error')
+    : null
+
+  if (errorParam === 'pending') {
     return (
-      <div className="flex items-center justify-center min-h-screen text-slate-500">
-        Checking auth…
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="bg-white border border-slate-200 rounded-xl p-8 w-full max-w-sm text-center shadow-sm">
+          <h1 className="text-xl font-bold mb-1">TrendEdge</h1>
+          <p className="text-amber-600 text-sm mt-3 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            Your account is pending admin approval. Please wait.
+          </p>
+        </div>
       </div>
     )
   }
 
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="bg-white border border-slate-200 rounded-xl p-8 w-full max-w-sm text-center shadow-sm">
-        <h1 className="text-xl font-bold mb-1">TrendEdge</h1>
-        <p className="text-slate-500 text-sm mb-4">Supertrend & ATR Trading System</p>
-        {error && (
-          <p className="text-red-500 text-sm mb-4 bg-red-50 border border-red-200 rounded px-3 py-2">
-            {error}
+  if (errorParam === 'revoked') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="bg-white border border-slate-200 rounded-xl p-8 w-full max-w-sm text-center shadow-sm">
+          <h1 className="text-xl font-bold mb-1">TrendEdge</h1>
+          <p className="text-red-500 text-sm mt-3 bg-red-50 border border-red-200 rounded px-3 py-2">
+            Your account access has been revoked. Contact support.
           </p>
-        )}
-        <button
-          onClick={() => redirectToKeycloak()}
-          className="mt-2 text-sm text-blue-600 hover:underline"
-        >
-          Try again
-        </button>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  // Blank while redirecting — no visible flash
+  return null
 }
