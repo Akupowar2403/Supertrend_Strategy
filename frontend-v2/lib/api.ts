@@ -82,8 +82,8 @@ export async function logoutUser(): Promise<void> {
  * Trigger TOTP auto-login after Keycloak redirects back.
  * Called once when ?code= is detected in the URL.
  */
-export async function authLogin(): Promise<StatusResponse> {
-  const res = await api.post<StatusResponse>('/api/auth/login')
+export async function authLogin(code?: string, redirectUri?: string): Promise<StatusResponse> {
+  const res = await api.post<StatusResponse>('/api/auth/login', { code, redirect_uri: redirectUri })
   return res.data
 }
 

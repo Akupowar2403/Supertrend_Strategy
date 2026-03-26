@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/store/AuthStore'
 import { getStatus, authLogin } from '@/lib/api'
 
 const KEYCLOAK_URL = process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:8080'
@@ -9,17 +10,23 @@ const APP_URL      = process.env.NEXT_PUBLIC_APP_URL      || 'http://localhost:3
 
 export default function HomePage() {
   const router = useRouter()
+  const { setAccessToken } = useAuth()
   const [checking, setChecking] = useState(true)
   const [error, setError]       = useState('')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const hasCode = params.has('code')
+    const code   = params.get('code')
 
-    const loginFn = hasCode ? authLogin : getStatus
+    const loginFn = code
+      ? () => authLogin(code, APP_URL)
+      : getStatus
 
     loginFn()
       .then(status => {
+        if (status.keycloak_token) {
+          setAccessToken(status.keycloak_token)
+        }
         if (status.logged_in) {
           window.history.replaceState({}, '', '/')
           router.replace('/dashboard')
@@ -37,7 +44,7 @@ export default function HomePage() {
         setError(err.message || 'Could not reach backend')
         setChecking(false)
       })
-  }, [router])
+  }, [router, setAccessToken])
 
   if (checking) {
     return (

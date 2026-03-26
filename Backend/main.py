@@ -330,13 +330,45 @@ async def logout():
 # ── Auth login (triggered after Keycloak redirect) ────────────────────────────
 
 @fastapi_app.post("/api/auth/login")
-async def auth_login():
+async def auth_login(request: Request):
     """
     Called by the frontend after Keycloak redirects back with ?code=.
-    Runs TOTP auto-login to get a fresh Zerodha access token,
-    then returns the same shape as /status.
+    Optionally exchanges the Keycloak code for an access token, then
+    runs TOTP auto-login to get a fresh Zerodha access token.
     """
     global _access_token
+
+    # ── Exchange Keycloak code if provided ─────────────────────────────────
+    keycloak_token: str | None = None
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    code         = body.get("code")
+    redirect_uri = body.get("redirect_uri")
+
+    if code and redirect_uri:
+        try:
+            import httpx
+            async with httpx.AsyncClient() as hc:
+                r = await hc.post(
+                    f"{settings.keycloak_url}/realms/{settings.keycloak_realm}"
+                    "/protocol/openid-connect/token",
+                    data={
+                        "grant_type":   "authorization_code",
+                        "client_id":    "swts-frontend",
+                        "code":         code,
+                        "redirect_uri": redirect_uri,
+                    },
+                )
+                if r.is_success:
+                    keycloak_token = r.json().get("access_token")
+                else:
+                    log.warning("auth/login: Keycloak code exchange failed: %s", r.text)
+        except Exception as exc:
+            log.warning("auth/login: Keycloak code exchange error: %s", exc)
+
     try:
         async with async_session() as db:
             # Check if already connected with a valid token
@@ -352,17 +384,18 @@ async def auth_login():
                 valid, info = zeroda.verify_token(account.access_token)
                 if valid:
                     return {
-                        "logged_in": True,
-                        "user":    info["user_name"],
-                        "user_id": info["user_id"],
-                        "ticker":  zeroda.ticker_status(),
+                        "logged_in":      True,
+                        "user":           info["user_name"],
+                        "user_id":        info["user_id"],
+                        "ticker":         zeroda.ticker_status(),
+                        "keycloak_token": keycloak_token,
                     }
 
             # Not connected — run TOTP auto-login
             sessions = await load_and_autologin_all(db)
             if not sessions:
                 return JSONResponse(
-                    {"logged_in": False, "reason": "TOTP auto-login failed"},
+                    {"logged_in": False, "reason": "TOTP auto-login failed", "keycloak_token": keycloak_token},
                     status_code=401,
                 )
             _access_token = next(iter(sessions.values()))
@@ -375,10 +408,11 @@ async def auth_login():
         valid, info = zeroda.verify_token(_access_token)
         if valid:
             return {
-                "logged_in": True,
-                "user":    info["user_name"],
-                "user_id": info["user_id"],
-                "ticker":  zeroda.ticker_status(),
+                "logged_in":      True,
+                "user":           info["user_name"],
+                "user_id":        info["user_id"],
+                "ticker":         zeroda.ticker_status(),
+                "keycloak_token": keycloak_token,
             }
         return JSONResponse({"logged_in": False, "reason": info}, status_code=401)
 
