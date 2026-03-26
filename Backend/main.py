@@ -138,8 +138,8 @@ async def lifespan(app: FastAPI):
     scheduler.start()
     log.info("Scheduler: Daily auto-login scheduled at 08:30 AM IST")
 
-    # Refresh encrypted credentials for any TOTP account matching KITE_USER_ID.
-    # Ensures DB is always in sync with .env (fixes stale/wrong encrypted values).
+    # Seed / refresh TOTP account from .env credentials.
+    # Creates the account if it doesn't exist; updates credentials if it does.
     try:
         from config.crypto import encrypt as _encrypt
         async with async_session() as db:
@@ -157,8 +157,23 @@ async def lifespan(app: FastAPI):
                 primary.totp_key_encrypted   = _encrypt(zeroda.TOTP_KEY)
                 await db.commit()
                 log.info("Startup: Refreshed credentials for account '%s' from .env", primary.label)
+            elif zeroda.USER_ID and zeroda.API_KEY:
+                new_account = Account(
+                    label                = "Primary",
+                    user_id              = zeroda.USER_ID,
+                    api_key              = zeroda.API_KEY,
+                    api_secret_encrypted = _encrypt(zeroda.API_SECRET),
+                    password_encrypted   = _encrypt(zeroda.PASSWORD),
+                    totp_key_encrypted   = _encrypt(zeroda.TOTP_KEY),
+                    auth_method          = "totp",
+                    is_active            = True,
+                    is_connected         = False,
+                )
+                db.add(new_account)
+                await db.commit()
+                log.info("Startup: Created account for user '%s' from .env", zeroda.USER_ID)
     except Exception as exc:
-        log.warning("Startup: Could not refresh account credentials: %s", exc)
+        log.warning("Startup: Could not seed account credentials: %s", exc)
 
     try:
         async with async_session() as db:
@@ -404,18 +419,19 @@ async def auth_login(request: Request):
             log.warning("auth/login: Keycloak code exchange error: %s", exc)
 
     # ── Check Keycloak role before allowing dashboard access ───────────────
+    kc_roles: list[str] = []
     if keycloak_token:
         try:
             import base64 as _b64, json as _json
             p = keycloak_token.split(".")[1]
             p += "=" * (-len(p) % 4)
-            roles = _json.loads(_b64.urlsafe_b64decode(p)).get("realm_access", {}).get("roles", [])
-            if "revoke" in roles:
+            kc_roles = _json.loads(_b64.urlsafe_b64decode(p)).get("realm_access", {}).get("roles", [])
+            if "revoke" in kc_roles:
                 return JSONResponse(
                     {"logged_in": False, "reason": "revoked", "keycloak_token": keycloak_token},
                     status_code=403,
                 )
-            if "admin" not in roles and "approve" not in roles:
+            if "admin" not in kc_roles and "approve" not in kc_roles:
                 return JSONResponse(
                     {"logged_in": False, "reason": "pending", "keycloak_token": keycloak_token},
                     status_code=403,
