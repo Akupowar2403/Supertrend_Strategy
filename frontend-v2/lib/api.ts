@@ -55,7 +55,11 @@ api.interceptors.response.use(
       'Unknown error'
     const message = typeof raw === 'string' ? raw : JSON.stringify(raw)
     console.error(`[API] ${error.config?.method?.toUpperCase()} ${error.config?.url} — ${message}`)
-    return Promise.reject(new Error(message))
+    // Preserve the original response so callers can inspect status/data (e.g. reason, keycloak_token)
+    const err = new Error(message) as Error & { response?: typeof error.response; status?: number }
+    err.response = error.response
+    err.status   = error.response?.status
+    return Promise.reject(err)
   }
 )
 

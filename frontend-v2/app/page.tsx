@@ -52,11 +52,13 @@ export default function HomePage() {
         .catch(err => {
           const reason = err?.response?.data?.reason
           const token  = err?.response?.data?.keycloak_token
-          if (token) setAccessToken(token)
           if (reason === 'pending' || reason === 'revoked') {
-            // Stay on page and show error via URL param so no state flash
+            // Clear any stored token so the localStorage check below doesn't
+            // redirect a pending/revoked user straight to /dashboard on reload.
+            localStorage.removeItem(TOKEN_KEY)
             window.location.replace(`/?error=${reason}`)
           } else {
+            if (token) setAccessToken(token)
             redirectToKeycloak()
           }
         })
