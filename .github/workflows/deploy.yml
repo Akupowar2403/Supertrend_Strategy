@@ -30,19 +30,19 @@ jobs:
             cd /home/ubuntu/supertrend-strategy/Backend
 
             # ── 2. Write .env from GitHub secrets ─────────────────────────
-            cat > .env << 'ENVEOF'
-            KITE_API_KEY=${{ secrets.KITE_API_KEY }}
-            KITE_API_SECRET=${{ secrets.KITE_API_SECRET }}
-            KITE_USER_ID=${{ secrets.KITE_USER_ID }}
-            KITE_PASSWORD=${{ secrets.KITE_PASSWORD }}
-            KITE_TOTP_KEY=${{ secrets.KITE_TOTP_KEY }}
-            DATABASE_URL=postgresql+asyncpg://postgres:${{ secrets.POSTGRES_PASSWORD }}@swts_postgres:5432/postgres
-            FERNET_KEY=${{ secrets.FERNET_KEY }}
-            KEYCLOAK_URL=http://swts_keycloak:8080/auth
-            KEYCLOAK_REALM=SWTS
-            KEYCLOAK_CLIENT_ID=swts-backend
-            KEYCLOAK_CLIENT_SECRET=${{ secrets.KEYCLOAK_CLIENT_SECRET }}
-            ENVEOF
+            printf '%s\n' \
+              'KITE_API_KEY=${{ secrets.KITE_API_KEY }}' \
+              'KITE_API_SECRET=${{ secrets.KITE_API_SECRET }}' \
+              'KITE_USER_ID=${{ secrets.KITE_USER_ID }}' \
+              'KITE_PASSWORD=${{ secrets.KITE_PASSWORD }}' \
+              'KITE_TOTP_KEY=${{ secrets.KITE_TOTP_KEY }}' \
+              'DATABASE_URL=postgresql+asyncpg://postgres:${{ secrets.POSTGRES_PASSWORD }}@swts_postgres:5432/postgres' \
+              'FERNET_KEY=${{ secrets.FERNET_KEY }}' \
+              'KEYCLOAK_URL=http://swts_keycloak:8080/auth' \
+              'KEYCLOAK_REALM=SWTS' \
+              'KEYCLOAK_CLIENT_ID=swts-backend' \
+              'KEYCLOAK_CLIENT_SECRET=${{ secrets.KEYCLOAK_CLIENT_SECRET }}' \
+              > .env
 
             # ── 3. Build and start containers ─────────────────────────────
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
