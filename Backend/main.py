@@ -439,56 +439,14 @@ async def auth_login(request: Request):
         except Exception as exc:
             log.warning("auth/login: role check error: %s", exc)
 
-    try:
-        async with async_session() as db:
-            # Check if already connected with a valid token
-            result = await db.execute(
-                select(Account).where(
-                    Account.is_active    == True,
-                    Account.is_connected == True,
-                    Account.access_token != None,
-                )
-            )
-            account = result.scalars().first()
-            if account:
-                valid, info = zeroda.verify_token(account.access_token)
-                if valid:
-                    return {
-                        "logged_in":      True,
-                        "user":           info["user_name"],
-                        "user_id":        info["user_id"],
-                        "ticker":         zeroda.ticker_status(),
-                        "keycloak_token": keycloak_token,
-                    }
-
-            # Not connected — run TOTP auto-login
-            sessions = await load_and_autologin_all(db)
-            if not sessions:
-                return JSONResponse(
-                    {"logged_in": False, "reason": "TOTP auto-login failed", "keycloak_token": keycloak_token},
-                    status_code=401,
-                )
-            _access_token = next(iter(sessions.values()))
-
-        try:
-            zeroda.init_ticker(_access_token)
-        except Exception as exc:
-            log.warning("auth/login: ticker init failed: %s", exc)
-
-        valid, info = zeroda.verify_token(_access_token)
-        if valid:
-            return {
-                "logged_in":      True,
-                "user":           info["user_name"],
-                "user_id":        info["user_id"],
-                "ticker":         zeroda.ticker_status(),
-                "keycloak_token": keycloak_token,
-            }
-        return JSONResponse({"logged_in": False, "reason": info}, status_code=401)
-
-    except Exception as exc:
-        log.error("auth/login error: %s", exc)
-        return JSONResponse({"logged_in": False, "reason": str(exc)}, status_code=500)
+    # ── Keycloak auth passed — return dashboard access with Zerodha status ──
+    # Zerodha connection is handled separately (8:30 scheduler or manual OAuth).
+    # Do NOT block dashboard access based on Zerodha status here.
+    return {
+        "logged_in":      True,
+        "keycloak_token": keycloak_token,
+        "ticker":         zeroda.ticker_status(),
+    }
 
 
 # ── Status & Ticker REST ──────────────────────────────────────────────────────
