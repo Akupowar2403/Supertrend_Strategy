@@ -329,7 +329,7 @@ async def logout():
 
 # ── Auth login (triggered after Keycloak redirect) ────────────────────────────
 
-@fastapi_app.post("/auth/login")
+@fastapi_app.post("/api/auth/login")
 async def auth_login():
     """
     Called by the frontend after Keycloak redirects back with ?code=.

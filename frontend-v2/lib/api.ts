@@ -83,7 +83,7 @@ export async function logoutUser(): Promise<void> {
  * Called once when ?code= is detected in the URL.
  */
 export async function authLogin(): Promise<StatusResponse> {
-  const res = await api.post<StatusResponse>('/auth/login')
+  const res = await api.post<StatusResponse>('/api/auth/login')
   return res.data
 }
 
