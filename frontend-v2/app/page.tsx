@@ -24,9 +24,7 @@ export default function HomePage() {
 
     loginFn()
       .then(status => {
-        if (status.keycloak_token) {
-          setAccessToken(status.keycloak_token)
-        }
+        if (status.keycloak_token) setAccessToken(status.keycloak_token)
         if (status.logged_in) {
           window.history.replaceState({}, '', '/')
           router.replace('/dashboard')
@@ -41,7 +39,17 @@ export default function HomePage() {
         }
       })
       .catch(err => {
-        setError(err.message || 'Could not reach backend')
+        // Extract reason from axios error response
+        const reason = err?.response?.data?.reason
+        const token  = err?.response?.data?.keycloak_token
+        if (token) setAccessToken(token)
+        if (reason === 'pending') {
+          setError('Your account is pending admin approval. Please wait.')
+        } else if (reason === 'revoked') {
+          setError('Your account access has been revoked. Contact support.')
+        } else {
+          setError(err.message || 'Could not reach backend')
+        }
         setChecking(false)
       })
   }, [router, setAccessToken])

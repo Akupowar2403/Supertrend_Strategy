@@ -38,11 +38,13 @@ interface AuthState {
   tickerStatus: TickerStatus | null
 }
 
+const TOKEN_KEY = 'swts_access_token'
+
 const initialState: AuthState = {
   isLoggedIn:   false,
   userName:     '',
   userId:       '',
-  accessToken:  '',
+  accessToken:  typeof window !== 'undefined' ? (localStorage.getItem(TOKEN_KEY) ?? '') : '',
   wsConnected:  false,
   tickerStatus: null,
 }
@@ -70,6 +72,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       }
 
     case 'SET_ACCESS_TOKEN':
+      if (typeof window !== 'undefined') localStorage.setItem(TOKEN_KEY, action.payload)
       return { ...state, accessToken: action.payload }
 
     case 'SET_WS_CONNECTED':
@@ -79,7 +82,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return { ...state, tickerStatus: action.payload }
 
     case 'LOGOUT':
-      return { ...initialState }
+      if (typeof window !== 'undefined') localStorage.removeItem(TOKEN_KEY)
+      return { ...initialState, accessToken: '' }
 
     default:
       return state

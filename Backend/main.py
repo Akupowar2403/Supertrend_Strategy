@@ -327,6 +327,40 @@ async def logout():
     return {"logged_out": True}
 
 
+# ── Keycloak code exchange (used by /admin page) ─────────────────────────────
+
+@fastapi_app.post("/api/auth/exchange")
+async def auth_exchange(request: Request):
+    """Exchange a Keycloak authorization code for an access token (no Zerodha)."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    code         = body.get("code")
+    redirect_uri = body.get("redirect_uri")
+    if not code or not redirect_uri:
+        return JSONResponse({"error": "code and redirect_uri required"}, status_code=400)
+    try:
+        import httpx as _httpx
+        async with _httpx.AsyncClient() as hc:
+            r = await hc.post(
+                f"{settings.keycloak_url}/realms/{settings.keycloak_realm}"
+                "/protocol/openid-connect/token",
+                data={
+                    "grant_type":   "authorization_code",
+                    "client_id":    "swts-frontend",
+                    "code":         code,
+                    "redirect_uri": redirect_uri,
+                },
+            )
+            if not r.is_success:
+                return JSONResponse({"error": "code exchange failed"}, status_code=400)
+            return {"access_token": r.json().get("access_token")}
+    except Exception as exc:
+        log.error("auth/exchange error: %s", exc)
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
 # ── Auth login (triggered after Keycloak redirect) ────────────────────────────
 
 @fastapi_app.post("/api/auth/login")
@@ -350,8 +384,8 @@ async def auth_login(request: Request):
 
     if code and redirect_uri:
         try:
-            import httpx
-            async with httpx.AsyncClient() as hc:
+            import httpx as _httpx
+            async with _httpx.AsyncClient() as hc:
                 r = await hc.post(
                     f"{settings.keycloak_url}/realms/{settings.keycloak_realm}"
                     "/protocol/openid-connect/token",
@@ -368,6 +402,26 @@ async def auth_login(request: Request):
                     log.warning("auth/login: Keycloak code exchange failed: %s", r.text)
         except Exception as exc:
             log.warning("auth/login: Keycloak code exchange error: %s", exc)
+
+    # ── Check Keycloak role before allowing dashboard access ───────────────
+    if keycloak_token:
+        try:
+            import base64 as _b64, json as _json
+            p = keycloak_token.split(".")[1]
+            p += "=" * (-len(p) % 4)
+            roles = _json.loads(_b64.urlsafe_b64decode(p)).get("realm_access", {}).get("roles", [])
+            if "revoke" in roles:
+                return JSONResponse(
+                    {"logged_in": False, "reason": "revoked", "keycloak_token": keycloak_token},
+                    status_code=403,
+                )
+            if "admin" not in roles and "approve" not in roles:
+                return JSONResponse(
+                    {"logged_in": False, "reason": "pending", "keycloak_token": keycloak_token},
+                    status_code=403,
+                )
+        except Exception as exc:
+            log.warning("auth/login: role check error: %s", exc)
 
     try:
         async with async_session() as db:
