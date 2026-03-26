@@ -68,11 +68,11 @@ services:
         NEXT_PUBLIC_KEYCLOAK_URL: ${KEYCLOAK_URL:-https://trendedge.secretweapon.in/auth}
         NEXT_PUBLIC_APP_URL:      ${APP_URL:-https://trendedge.secretweapon.in}
         NEXT_PUBLIC_BACKEND_URL:  ""
+        BACKEND_ORIGIN:           http://swts_backend:8000
     container_name: swts_frontend
     restart: unless-stopped
     environment:
-      NODE_ENV:       production
-      BACKEND_ORIGIN: http://swts_backend:8000
+      NODE_ENV: production
     depends_on:
       - swts_backend
     networks:
