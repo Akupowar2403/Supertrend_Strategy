@@ -324,7 +324,7 @@ async def logout():
         accounts = result.scalars().all()
         for acc in accounts:
             await disconnect_account(db, acc.id)
-    return RedirectResponse(url="/")
+    return {"logged_out": True}
 
 
 # ── Status & Ticker REST ──────────────────────────────────────────────────────

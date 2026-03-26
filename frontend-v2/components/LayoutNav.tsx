@@ -76,9 +76,12 @@ export function LayoutNav() {
     return pathname.startsWith(href)
   }
 
-  function handleLogout() {
-    logout()
-    router.replace('/')
+  async function handleLogout() {
+    try {
+      await fetch('/logout')   // tells backend to invalidate token + clear DB session
+    } catch { /* ignore */ }
+    logout()                   // clear local React state
+    router.replace('/')        // redirect to login page
   }
 
   const initials = auth.userName
