@@ -24,6 +24,10 @@ const nextConfig: NextConfig = {
         source:      '/logout',
         destination: `${BACKEND_ORIGIN}/logout`,
       },
+      {
+        source:      '/auth/:path*',
+        destination: `${BACKEND_ORIGIN}/auth/:path*`,
+      },
       // KiteTicker REST endpoints
       {
         source:      '/ticker/:path*',
