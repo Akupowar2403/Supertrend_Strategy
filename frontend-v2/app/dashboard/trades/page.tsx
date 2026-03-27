@@ -162,13 +162,21 @@ export default function TradesPage() {
 // ── ActivityFeed ──────────────────────────────────────────────────────────────
 
 const EVENT_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  SIGNAL_BUY:         { label: 'Signal Buy',          color: 'var(--theme-profit)',     bg: 'var(--theme-profit-bg)',  border: 'var(--theme-profit-border)' },
-  ORDER_PLACED:       { label: 'Order Placed',         color: 'var(--theme-accent)',     bg: 'var(--theme-accent-soft)', border: 'var(--theme-accent-border)' },
-  ORDER_FILLED:       { label: 'Order Filled',         color: 'var(--theme-profit)',     bg: 'var(--theme-profit-bg)',  border: 'var(--theme-profit-border)' },
-  ORDER_REJECTED:     { label: 'Order Rejected',       color: 'var(--theme-loss)',       bg: 'var(--theme-loss-bg)',    border: 'var(--theme-loss-border)' },
-  ORDER_TIMEOUT:      { label: 'Order Timeout',        color: 'var(--theme-warn)',       bg: 'var(--theme-warn-bg)',    border: 'var(--theme-warn-border)' },
-  EXIT_TRIGGERED:     { label: 'Exit Triggered',       color: 'var(--theme-loss)',       bg: 'var(--theme-loss-bg)',    border: 'var(--theme-loss-border)' },
-  FUNDS_INSUFFICIENT: { label: 'Insufficient Funds',   color: 'var(--theme-warn)',       bg: 'var(--theme-warn-bg)',    border: 'var(--theme-warn-border)' },
+  SIGNAL_BUY:         { label: 'Signal Buy',        color: 'var(--theme-profit)', bg: 'var(--theme-profit-bg)',  border: 'var(--theme-profit-border)' },
+  SIGNAL_SELL:        { label: 'Signal Sell',        color: 'var(--theme-loss)',   bg: 'var(--theme-loss-bg)',    border: 'var(--theme-loss-border)'   },
+  ORDER_PLACED:       { label: 'Order Placed',       color: 'var(--theme-accent)', bg: 'var(--theme-accent-soft)',border: 'var(--theme-accent-border)' },
+  ORDER_FILLED:       { label: 'Order Filled',       color: 'var(--theme-profit)', bg: 'var(--theme-profit-bg)',  border: 'var(--theme-profit-border)' },
+  ORDER_REJECTED:     { label: 'Order Rejected',     color: 'var(--theme-loss)',   bg: 'var(--theme-loss-bg)',    border: 'var(--theme-loss-border)'   },
+  ORDER_TIMEOUT:      { label: 'Order Timeout',      color: 'var(--theme-warn)',   bg: 'var(--theme-warn-bg)',    border: 'var(--theme-warn-border)'   },
+  EXIT_TRIGGERED:     { label: 'Exit Triggered',     color: 'var(--theme-loss)',   bg: 'var(--theme-loss-bg)',    border: 'var(--theme-loss-border)'   },
+  FUNDS_INSUFFICIENT: { label: 'Insufficient Funds', color: 'var(--theme-warn)',   bg: 'var(--theme-warn-bg)',    border: 'var(--theme-warn-border)'   },
+}
+
+function fmtDetail(k: string, v: unknown): string {
+  if (v === null || v === undefined || v === '') return '—'
+  if (typeof v === 'number') return k === 'qty' ? String(v) : v.toFixed(2)
+  if (k === 'order_id' && typeof v === 'string') return v.slice(0, 8)
+  return String(v)
 }
 
 function ActivityFeed({
@@ -182,9 +190,7 @@ function ActivityFeed({
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3 text-center">
         <span className="text-5xl" style={{ color: 'var(--theme-text-ghost)' }}>◎</span>
-        <p className="text-base font-semibold" style={{ color: 'var(--theme-text-muted)' }}>
-          No activity yet
-        </p>
+        <p className="text-base font-semibold" style={{ color: 'var(--theme-text-muted)' }}>No activity yet</p>
         <p className="text-sm" style={{ color: 'var(--theme-text-ghost)' }}>
           Start the engine — trade events will stream here in real-time
         </p>
@@ -202,63 +208,84 @@ function ActivityFeed({
         backdropFilter: 'blur(20px) saturate(160%)',
       }}
     >
-      {logs.map((entry, i) => {
-        const meta = EVENT_META[entry.event_type] ?? {
-          label: entry.event_type, color: 'var(--theme-text-muted)',
-          bg: 'var(--theme-glass-card)', border: 'var(--theme-glass-border)',
-        }
-        const d = entry.details as Record<string, unknown>
+      <table className="w-full border-collapse">
+        <thead>
+          <tr style={{ background: 'var(--theme-glass-panel)', borderBottom: '1px solid var(--theme-glass-border)' }}>
+            {['Time', 'Event', 'Symbol', 'Mode', 'Details'].map(h => (
+              <th key={h} className="text-left px-4 py-3 text-2xs font-bold uppercase tracking-widest whitespace-nowrap"
+                style={{ color: 'var(--theme-text-ghost)' }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {logs.map((entry, i) => {
+            const meta = EVENT_META[entry.event_type] ?? {
+              label: entry.event_type, color: 'var(--theme-text-muted)',
+              bg: 'var(--theme-glass-panel)', border: 'var(--theme-glass-border)',
+            }
+            const d       = entry.details as Record<string, unknown>
+            const timeStr = entry.created_at?.slice(0, 19).replace('T', ' ') ?? '—'
 
-        return (
-          <div
-            key={entry.id}
-            className="flex items-start gap-4 px-5 py-3.5"
-            style={{ borderBottom: i < logs.length - 1 ? '1px solid var(--theme-glass-border)' : 'none' }}
-          >
-            {/* Timestamp */}
-            <span className="shrink-0 text-xs tabular-nums font-mono w-36 mt-0.5"
-              style={{ color: 'var(--theme-text-ghost)' }}>
-              {entry.created_at?.slice(0, 19).replace('T', ' ')}
-            </span>
+            const detailStr = Object.entries(d)
+              .filter(([, v]) => v !== null && v !== undefined && v !== '')
+              .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${fmtDetail(k, v)}`)
+              .join('   ·   ')
 
-            {/* Event badge */}
-            <span
-              className="shrink-0 text-2xs font-bold px-2 py-0.5 rounded-md mt-0.5 whitespace-nowrap"
-              style={{ color: meta.color, background: meta.bg, border: `1px solid ${meta.border}` }}
-            >
-              {meta.label}
-            </span>
+            return (
+              <tr
+                key={entry.id}
+                style={{ borderBottom: i < logs.length - 1 ? '1px solid var(--theme-glass-border)' : 'none' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--theme-glass-panel)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                {/* Time */}
+                <td className="px-4 py-2.5 whitespace-nowrap font-mono tabular-nums text-xs"
+                  style={{ color: 'var(--theme-text-ghost)', minWidth: '148px' }}>
+                  {timeStr}
+                </td>
 
-            {/* Symbol */}
-            {entry.symbol && (
-              <span className="shrink-0 text-sm font-bold w-24"
-                style={{ color: 'var(--theme-text-primary)' }}>
-                {entry.symbol}
-              </span>
-            )}
+                {/* Event badge */}
+                <td className="px-4 py-2.5 whitespace-nowrap" style={{ minWidth: '130px' }}>
+                  <span
+                    className="inline-block text-xs font-bold px-2.5 py-0.5 rounded-md"
+                    style={{ color: meta.color, background: meta.bg, border: `1px solid ${meta.border}` }}
+                  >
+                    {meta.label}
+                  </span>
+                </td>
 
-            {/* Mode badge */}
-            <span
-              className="shrink-0 text-2xs font-bold px-2 py-0.5 rounded-md mt-0.5"
-              style={entry.broker_mode === 'live' ? {
-                color: 'var(--theme-loss)', background: 'var(--theme-loss-bg)', border: '1px solid var(--theme-loss-border)',
-              } : {
-                color: 'var(--theme-accent)', background: 'var(--theme-accent-soft)', border: '1px solid var(--theme-accent-border)',
-              }}
-            >
-              {entry.broker_mode === 'live' ? 'Live' : 'Sim'}
-            </span>
+                {/* Symbol */}
+                <td className="px-4 py-2.5 whitespace-nowrap text-sm font-semibold"
+                  style={{ color: 'var(--theme-text-primary)', minWidth: '140px' }}>
+                  {entry.symbol ?? '—'}
+                </td>
 
-            {/* Details */}
-            <span className="flex-1 text-xs font-mono" style={{ color: 'var(--theme-text-muted)' }}>
-              {Object.entries(d)
-                .filter(([, v]) => v !== null && v !== undefined && v !== '')
-                .map(([k, v]) => `${k}: ${typeof v === 'number' ? Number(v).toFixed(2) : v}`)
-                .join('  ·  ')}
-            </span>
-          </div>
-        )
-      })}
+                {/* Mode */}
+                <td className="px-4 py-2.5 whitespace-nowrap" style={{ minWidth: '70px' }}>
+                  <span
+                    className="inline-block text-xs font-semibold px-2 py-0.5 rounded-md"
+                    style={entry.broker_mode === 'live' ? {
+                      color: 'var(--theme-loss)', background: 'var(--theme-loss-bg)', border: '1px solid var(--theme-loss-border)',
+                    } : {
+                      color: 'var(--theme-accent)', background: 'var(--theme-accent-soft)', border: '1px solid var(--theme-accent-border)',
+                    }}
+                  >
+                    {entry.broker_mode === 'live' ? 'Live' : 'Sim'}
+                  </span>
+                </td>
+
+                {/* Details */}
+                <td className="px-4 py-2.5 text-xs font-mono"
+                  style={{ color: 'var(--theme-text-muted)' }}>
+                  {detailStr || '—'}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }

@@ -14,10 +14,15 @@ export function IndicatorsPanel({ open, onClose }: Props) {
 
   const [stOpen,    setStOpen]    = useState(false)
   const [atrOpen,   setAtrOpen]   = useState(false)
-  const [stLength,  setStLength]  = useState('10')
-  const [stMult,    setStMult]    = useState('3.0')
-  const [atrPeriod, setAtrPeriod] = useState('14')
-  const [atrThresh, setAtrThresh] = useState('1.0')
+
+  // Initialise from store so values survive close/reopen
+  const [stLength,  setStLength]  = useState(String(market.indicatorSettings.supertrend.length))
+  const [stMult,    setStMult]    = useState(String(market.indicatorSettings.supertrend.multiplier))
+  const [atrPeriod, setAtrPeriod] = useState(String(market.indicatorSettings.atr.period))
+  const [atrThresh, setAtrThresh] = useState(String(market.indicatorSettings.atr.threshold))
+
+  const [stApplied,  setStApplied]  = useState(false)
+  const [atrApplied, setAtrApplied] = useState(false)
 
   function applyStSettings() {
     updateIndicatorSettings({
@@ -25,6 +30,8 @@ export function IndicatorsPanel({ open, onClose }: Props) {
       length:     parseInt(stLength)    || 10,
       multiplier: parseFloat(stMult)    || 3.0,
     })
+    setStApplied(true)
+    setTimeout(() => setStApplied(false), 1500)
   }
 
   function applyAtrSettings() {
@@ -33,6 +40,8 @@ export function IndicatorsPanel({ open, onClose }: Props) {
       period:    parseInt(atrPeriod)    || 14,
       threshold: parseFloat(atrThresh)  || 1.0,
     })
+    setAtrApplied(true)
+    setTimeout(() => setAtrApplied(false), 1500)
   }
 
   if (!open) return null
@@ -99,7 +108,7 @@ export function IndicatorsPanel({ open, onClose }: Props) {
               <SettingRow label="Multiplier">
                 <NumberInput value={stMult} onChange={setStMult} step="0.1" />
               </SettingRow>
-              <ApplyButton onClick={applyStSettings} />
+              <ApplyButton onClick={applyStSettings} applied={stApplied} />
             </IndicatorCard>
 
             <IndicatorCard
@@ -116,7 +125,7 @@ export function IndicatorsPanel({ open, onClose }: Props) {
               <SettingRow label="Threshold">
                 <NumberInput value={atrThresh} onChange={setAtrThresh} step="0.1" />
               </SettingRow>
-              <ApplyButton onClick={applyAtrSettings} />
+              <ApplyButton onClick={applyAtrSettings} applied={atrApplied} />
             </IndicatorCard>
 
           </div>
@@ -245,18 +254,18 @@ function NumberInput({ value, onChange, step }: {
 
 // ── ApplyButton ────────────────────────────────────────────────────────────────
 
-function ApplyButton({ onClick }: { onClick: () => void }) {
+function ApplyButton({ onClick, applied }: { onClick: () => void; applied?: boolean }) {
   return (
     <button
       onClick={onClick}
       className="w-full py-2 rounded-lg text-[11px] font-bold transition-all mt-1"
       style={{
-        background: 'var(--theme-accent)',
+        background: applied ? 'var(--theme-success, #22c55e)' : 'var(--theme-accent)',
         color:      '#fff',
         boxShadow:  'var(--theme-accent-glow)',
       }}
     >
-      Apply
+      {applied ? 'Applied ✓' : 'Apply'}
     </button>
   )
 }
