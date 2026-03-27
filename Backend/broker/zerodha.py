@@ -39,6 +39,7 @@ class ZerodhaBroker(BrokerABC):
         self._subscribed_tokens: list = []
         self._ticker_connected: bool  = False
         self._ticker = None
+        self._peak_prices: dict[int, float] = {}  # token → peak price for trailing SL
 
     # ── Session ───────────────────────────────────────────────────────────────
 
@@ -194,8 +195,42 @@ class ZerodhaBroker(BrokerABC):
             raise
 
     def get_positions(self) -> list[dict]:
-        """Returns list of net positions."""
-        return self.kite.positions()["net"]
+        """
+        Returns open long positions only (quantity > 0), with keys normalized
+        to match the engine's expected format:
+          quantity      → qty
+          average_price → entry_price
+          tradingsymbol → symbol
+          peak_price    → injected from internal tracker (for trailing SL)
+        """
+        result = []
+        for p in self.kite.positions()["net"]:
+            qty = p.get("quantity", 0)
+            if qty <= 0:
+                continue
+            token       = p.get("instrument_token")
+            entry_price = float(p.get("average_price", 0))
+            # Init peak tracker on first sight of this position
+            if token not in self._peak_prices:
+                self._peak_prices[token] = entry_price
+            result.append({
+                "symbol":      p.get("tradingsymbol"),
+                "token":       token,
+                "qty":         qty,
+                "entry_price": entry_price,
+                "peak_price":  self._peak_prices.get(token, entry_price),
+                "entry_time":  None,
+            })
+        # Drop peak trackers for positions that are now closed
+        active = {p["token"] for p in result}
+        self._peak_prices = {k: v for k, v in self._peak_prices.items() if k in active}
+        return result
+
+    def update_peak_price(self, current_price: float) -> None:
+        """Update peak price tracker for trailing SL — called every tick by engine."""
+        for token in list(self._peak_prices):
+            if current_price > self._peak_prices[token]:
+                self._peak_prices[token] = current_price
 
     def get_holdings(self) -> list[dict]:
         """Returns list of DEMAT equity holdings."""

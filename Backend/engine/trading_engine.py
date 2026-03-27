@@ -279,7 +279,11 @@ class TradingEngine:
         })
 
         # Position update + exit checks — every tick
-        positions   = self.broker.get_positions()
+        # Filter to only the instrument this engine is managing — prevents
+        # other account positions (manual trades) from being picked up.
+        positions   = [p for p in self.broker.get_positions()
+                       if p.get("token") == self.instrument_token
+                       or p.get("tradingsymbol") == self.symbol]
         in_position = bool(positions)
 
         if in_position:
@@ -342,16 +346,16 @@ class TradingEngine:
                     },
                 })
 
+                exit_qty = position.get("qty", self.qty)
                 order_id = self.broker.place_order(
                     symbol=self.symbol, token=self.instrument_token,
-                    qty=position.get("qty", self.qty), transaction_type="SELL",
+                    qty=exit_qty, transaction_type="SELL",
                     product="MIS", order_type="MARKET",
                     exchange=self.exchange,
                 )
                 emit_sync("order:placed", {
                     "type": "SELL", "symbol": self.symbol,
-                    "qty": position.get("qty", self.qty),
-                    "price": close, "order_id": order_id,
+                    "qty": exit_qty, "price": close, "order_id": order_id,
                 })
                 save_trade_log_sync({
                     "event_type":  "ORDER_PLACED",
@@ -359,21 +363,28 @@ class TradingEngine:
                     "broker_mode": settings.broker_mode,
                     "details": {
                         "type":     "SELL",
-                        "qty":      position.get("qty", self.qty),
+                        "qty":      exit_qty,
                         "price":    close,
                         "order_id": order_id,
                     },
                 })
 
+                # Wait for fill confirmation before saving trade
+                fill       = self._wait_for_fill(order_id)
+                exit_price = fill["fill_price"] if fill["status"] == "COMPLETE" and fill["fill_price"] > 0 else close
+                pnl_points = round(exit_price - summary["entry_price"], 2)
+                pnl_amount = round(pnl_points * exit_qty, 2)
+                result     = "PROFIT" if pnl_points >= 0 else "LOSS"
+
                 save_trade_sync({
                     "symbol":           self.symbol,
                     "instrument_token": self.instrument_token,
-                    "qty":              position.get("qty", self.qty),
+                    "qty":              exit_qty,
                     "entry_price":      summary["entry_price"],
-                    "exit_price":       summary["exit_price"],
-                    "pnl_points":       summary["pnl_points"],
-                    "pnl_amount":       summary["pnl_amount"],
-                    "result":           summary["result"],
+                    "exit_price":       exit_price,
+                    "pnl_points":       pnl_points,
+                    "pnl_amount":       pnl_amount,
+                    "result":           result,
                     "exit_reason":      exit_reason,
                     "broker_mode":      settings.broker_mode,
                     "interval":         self.interval,
