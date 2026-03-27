@@ -484,6 +484,88 @@ class TradingEngine:
                     )
                     return  # don't track position — order didn't fill
 
+    # ── Manual position exit (called from UI — engine stays RUNNING) ──────────
+
+    def exit_position(self) -> None:
+        """
+        Manually exit the current open position.
+        Engine state is NOT changed — it stays RUNNING and will take new entries.
+        Called via Socket.IO 'position:exit' event from the frontend.
+        """
+        positions = self.broker.get_positions()
+        if not positions:
+            log.info("[ENGINE] exit_position — no open position")
+            return
+
+        exit_price = 0.0
+        ticks = self.broker.get_latest_ticks()
+        tick  = ticks.get(self.instrument_token)
+        if tick and tick.get("last_price"):
+            exit_price = float(tick["last_price"])
+        elif not self.latest_df.empty:
+            exit_price = float(self.latest_df.iloc[-1]["close"])
+
+        position    = positions[0]
+        qty         = position.get("qty", self.qty)
+        entry_price = position.get("entry_price", 0.0)
+        pnl_points  = round(exit_price - entry_price, 2)
+        pnl_amount  = round(pnl_points * qty, 2)
+        result      = "PROFIT" if pnl_points >= 0 else "LOSS"
+
+        log.info(
+            "[ENGINE] MANUAL EXIT — entry=%.2f | exit=%.2f | P&L=%.2f (%s)",
+            entry_price, exit_price, pnl_points, result,
+        )
+
+        emit_sync("exit:triggered", {
+            "reason":      "MANUAL_EXIT",
+            "entry_price": entry_price,
+            "exit_price":  exit_price,
+            "pnl_points":  pnl_points,
+            "pnl_amount":  pnl_amount,
+            "result":      result,
+        })
+        save_trade_log_sync({
+            "event_type":  "EXIT_TRIGGERED",
+            "symbol":      self.symbol,
+            "broker_mode": settings.broker_mode,
+            "details": {
+                "reason":      "MANUAL_EXIT",
+                "entry_price": entry_price,
+                "exit_price":  exit_price,
+                "pnl_points":  pnl_points,
+                "pnl_amount":  pnl_amount,
+                "result":      result,
+            },
+        })
+
+        order_id = self.broker.place_order(
+            symbol=self.symbol, token=self.instrument_token,
+            qty=qty, transaction_type="SELL",
+            product="MIS", order_type="MARKET",
+            exchange=self.exchange,
+        )
+        emit_sync("order:placed", {
+            "type": "SELL", "symbol": self.symbol,
+            "qty": qty, "price": exit_price, "order_id": order_id,
+        })
+
+        save_trade_sync({
+            "symbol":           self.symbol,
+            "instrument_token": self.instrument_token,
+            "qty":              qty,
+            "entry_price":      entry_price,
+            "exit_price":       exit_price,
+            "pnl_points":       pnl_points,
+            "pnl_amount":       pnl_amount,
+            "result":           result,
+            "exit_reason":      "MANUAL_EXIT",
+            "broker_mode":      settings.broker_mode,
+            "interval":         self.interval,
+            "entry_time":       position.get("entry_time"),
+            "exit_time":        None,
+        })
+
     # ── Exit all positions (called on engine stop) ─────────────────────────────
 
     def _exit_all_positions(self, reason: str = "ENGINE_STOP") -> None:

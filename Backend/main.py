@@ -10,6 +10,7 @@ Socket events (client → server):
   engine:stop        {}
   engine:pause       {}
   engine:resume      {}
+  position:exit      {}   — manually exit open position, engine stays RUNNING
   indicator:toggle   {name: "supertrend"|"atr", enabled: bool}
   mode:switch        {mode: "forward_test"|"live"}
   instruments:search {query, exchange?}   → returns instruments:results
@@ -588,6 +589,15 @@ async def on_engine_stop(sid, data: dict):
         return
     # Run in thread — stop() calls place_order (blocking HTTP), must not block event loop
     await asyncio.to_thread(_engine.stop)
+    await emit("engine:state", _engine.status())
+
+
+@sio.on("position:exit")
+async def on_position_exit(sid, data: dict):
+    """Manually exit the open position. Engine stays RUNNING — will take new entries."""
+    if not _engine:
+        return
+    await asyncio.to_thread(_engine.exit_position)
     await emit("engine:state", _engine.status())
 
 

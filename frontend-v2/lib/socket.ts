@@ -190,6 +190,10 @@ export function resumeEngine(): void {
   eventBus.emit(EVENTS.ENGINE_RESUME, undefined)
 }
 
+export function exitPosition(): void {
+  getSocket().emit('position:exit', {})
+}
+
 // ── Indicator helpers ─────────────────────────────────────────────────────────
 
 export function toggleIndicator(payload: IndicatorTogglePayload): void {
