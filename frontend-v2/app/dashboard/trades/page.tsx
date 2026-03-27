@@ -226,7 +226,8 @@ function ActivityFeed({
               bg: 'var(--theme-glass-panel)', border: 'var(--theme-glass-border)',
             }
             const d       = entry.details as Record<string, unknown>
-            const timeStr = entry.created_at?.slice(0, 19).replace('T', ' ') ?? '—'
+            const dateStr = entry.created_at?.slice(0, 10) ?? '—'
+            const timeStr = entry.created_at?.slice(11, 19) ?? '—'
 
             const detailStr = Object.entries(d)
               .filter(([, v]) => v !== null && v !== undefined && v !== '')
@@ -241,9 +242,14 @@ function ActivityFeed({
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 {/* Time */}
-                <td className="px-4 py-2.5 whitespace-nowrap font-mono tabular-nums text-xs"
-                  style={{ color: 'var(--theme-text-ghost)', minWidth: '148px' }}>
-                  {timeStr}
+                <td className="px-4 py-2.5 whitespace-nowrap" style={{ minWidth: '148px' }}>
+                  <span className="text-xs font-mono tabular-nums" style={{ color: 'var(--theme-text-muted)' }}>
+                    {timeStr}
+                    <span className="ml-1 text-2xs font-bold" style={{ color: 'var(--theme-accent)' }}>IST</span>
+                  </span>
+                  <div className="text-2xs font-mono tabular-nums mt-0.5" style={{ color: 'var(--theme-text-ghost)' }}>
+                    {dateStr}
+                  </div>
                 </td>
 
                 {/* Event badge */}

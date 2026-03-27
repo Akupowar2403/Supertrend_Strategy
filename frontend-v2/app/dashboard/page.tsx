@@ -43,6 +43,22 @@ export default function DashboardPage() {
 
   const [qtyInput, setQtyInput] = useState('')
   const [indOpen,  setIndOpen]  = useState(false)
+  const [istTime,  setIstTime]  = useState('')
+
+  useEffect(() => {
+    function tick() {
+      setIstTime(new Date().toLocaleTimeString('en-IN', {
+        timeZone:     'Asia/Kolkata',
+        hour:         '2-digit',
+        minute:       '2-digit',
+        second:       '2-digit',
+        hour12:       false,
+      }))
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [])
 
   const [exitSettings, setExitSettings] = useState<ExitSettingsPayload>({
     target_type:      'points',
@@ -212,31 +228,21 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* ── Right side: live clock + WS status ───────────────────────── */}
-          <div className="flex items-center gap-4 shrink-0">
-            {tick?.timestamp && (
-              <div className="text-right">
-                <p
-                  className="font-mono text-xl font-bold tabular-nums leading-none"
-                  style={{ color: 'var(--theme-text-primary)' }}
-                >
-                  {tick.timestamp.slice(11, 19)}
-                </p>
-                <p className="text-2xs mt-1 uppercase tracking-widest"
-                  style={{ color: 'var(--theme-text-ghost)' }}>
-                  Market Time
-                </p>
-              </div>
-            )}
+          {/* ── Right side: IST clock + WS status ────────────────────────── */}
+          <div className="flex items-center gap-3 shrink-0">
+
+            {/* Live IST clock */}
+            <span className="font-mono text-sm tabular-nums" style={{ color: 'var(--theme-text-muted)' }}>
+              {istTime}
+              <span className="ml-1 text-xs font-semibold" style={{ color: 'var(--theme-text-ghost)' }}>IST</span>
+            </span>
 
             {/* WS Connected status */}
             <div
               className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
               style={{
-                background: 'var(--theme-glass-card)',
-                border:     `1px solid ${auth.wsConnected
-                  ? 'var(--theme-profit-border)'
-                  : 'var(--theme-glass-border)'}`,
+                background:     'var(--theme-glass-card)',
+                border:         `1px solid ${auth.wsConnected ? 'var(--theme-profit-border)' : 'var(--theme-glass-border)'}`,
                 backdropFilter: 'blur(12px)',
               }}
             >
@@ -247,13 +253,12 @@ export default function DashboardPage() {
                   boxShadow:  auth.wsConnected ? 'var(--theme-profit-glow)' : 'none',
                 }}
               />
-              <span
-                className="text-sm font-semibold"
-                style={{ color: auth.wsConnected ? 'var(--theme-profit)' : 'var(--theme-text-ghost)' }}
-              >
+              <span className="text-sm font-semibold"
+                style={{ color: auth.wsConnected ? 'var(--theme-profit)' : 'var(--theme-text-ghost)' }}>
                 {auth.wsConnected ? 'Connected' : 'Offline'}
               </span>
             </div>
+
           </div>
 
         </div>
