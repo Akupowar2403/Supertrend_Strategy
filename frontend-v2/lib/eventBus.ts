@@ -47,6 +47,7 @@ import type {
   LogPayload,
   ModeStatePayload,
   ErrorPayload,
+  TradeLogEntry,
 } from '@/types/types'
 
 export interface EventPayloadMap {
@@ -84,6 +85,10 @@ export interface EventPayloadMap {
   // ── Connection ──────────────────────────────────────────────────────────────
   WS_CONNECTED:          undefined
   WS_DISCONNECTED:       undefined
+
+  // ── Trade log (activity feed) ────────────────────────────────────────────────
+  TRADELOG_RECEIVED:     TradeLogEntry
+  TRADELOG_HISTORY:      TradeLogEntry[]
 
   // ── State control ───────────────────────────────────────────────────────────
   RESET_MARKET_DATA:     undefined

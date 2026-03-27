@@ -20,6 +20,15 @@ export type ExitReason =
   | 'ST_RED'
   | 'ENGINE_STOP'
 
+export type TradeLogEventType =
+  | 'SIGNAL_BUY'
+  | 'ORDER_PLACED'
+  | 'ORDER_FILLED'
+  | 'ORDER_REJECTED'
+  | 'ORDER_TIMEOUT'
+  | 'EXIT_TRIGGERED'
+  | 'FUNDS_INSUFFICIENT'
+
 export type Signal = 'BUY' | 'EXIT' | 'HOLD'
 
 export type TradeResult = 'PROFIT' | 'LOSS'
@@ -106,6 +115,16 @@ export interface IndicatorsDataPayload {
   atr:        number | null
   direction:  Direction
   new_candle: boolean
+}
+
+/** Emitted on new trade activity event (real-time) and in tradelog:history batch */
+export interface TradeLogEntry {
+  id:          number
+  event_type:  TradeLogEventType
+  symbol:      string | null
+  broker_mode: BrokerMode
+  details:     Record<string, unknown>
+  created_at:  string
 }
 
 /** Emitted by the backend log handler — streams all Python logs to frontend */
@@ -322,6 +341,13 @@ export interface ForwardSummaryResponse {
   trades:            ForwardTrade[]
 }
 
+export interface FundsResponse {
+  mode:         BrokerMode
+  live_balance: number
+  collateral:   number
+  net:          number
+}
+
 
 // ── INTERNAL TYPES ────────────────────────────────────────────────────────────
 
@@ -424,6 +450,10 @@ export const EVENTS = {
   SOCKET_ERROR:               'SOCKET_ERROR',
   WS_CONNECTED:          'WS_CONNECTED',
   WS_DISCONNECTED:       'WS_DISCONNECTED',
+
+  // Trade log (activity feed)
+  TRADELOG_RECEIVED:     'TRADELOG_RECEIVED',
+  TRADELOG_HISTORY:      'TRADELOG_HISTORY',
 
   // State
   RESET_MARKET_DATA:     'RESET_MARKET_DATA',

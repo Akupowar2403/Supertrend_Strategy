@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getHoldings, getPositions } from '@/lib/api'
+import { getHoldings, getPositions, getFunds } from '@/lib/api'
 import type {
-  HoldingsResponse, PositionsResponse,
+  HoldingsResponse, PositionsResponse, FundsResponse,
   LiveHolding, ForwardTestHolding,
   LivePosition, ForwardTestPosition,
 } from '@/types/types'
@@ -11,11 +11,12 @@ import type {
 export default function PortfolioPage() {
   const [holdings,  setHoldings]  = useState<HoldingsResponse | null>(null)
   const [positions, setPositions] = useState<PositionsResponse | null>(null)
+  const [funds,     setFunds]     = useState<FundsResponse | null>(null)
   const [loading,   setLoading]   = useState(true)
 
   useEffect(() => {
-    Promise.all([getHoldings(), getPositions()])
-      .then(([h, p]) => { setHoldings(h); setPositions(p) })
+    Promise.all([getHoldings(), getPositions(), getFunds()])
+      .then(([h, p, f]) => { setHoldings(h); setPositions(p); setFunds(f) })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
@@ -80,7 +81,8 @@ export default function PortfolioPage() {
           <LoadingCards />
         ) : (
           <>
-            {/* Forward test summary */}
+            {/* Capital — live funds or virtual capital depending on mode */}
+            {isLive && funds && <LiveFundsCard data={funds} />}
             {!isLive && holdings && (
               <ForwardSummaryCard data={holdings.holdings[0] as ForwardTestHolding} />
             )}
@@ -208,6 +210,38 @@ export default function PortfolioPage() {
             )}
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── LiveFundsCard ─────────────────────────────────────────────────────────────
+
+function LiveFundsCard({ data }: { data: FundsResponse }) {
+  return (
+    <div
+      className="glass-card rounded-2xl p-6"
+    >
+      <p className="text-xs font-bold uppercase tracking-widest mb-5"
+        style={{ color: 'var(--theme-accent)' }}>
+        Live Capital — Zerodha Equity
+      </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <BigStat
+          label="Live Balance"
+          value={`₹${data.live_balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          valueColor="var(--theme-accent)"
+        />
+        <BigStat
+          label="Collateral"
+          value={`₹${data.collateral.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+        />
+        <BigStat
+          label="Net"
+          value={`₹${data.net.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          valueColor={data.net >= 0 ? 'var(--theme-profit)' : 'var(--theme-loss)'}
+          glow={data.net >= 0 ? 'var(--theme-profit-glow)' : undefined}
+        />
       </div>
     </div>
   )

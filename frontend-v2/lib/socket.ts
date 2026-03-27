@@ -39,6 +39,7 @@ import type {
   IndicatorSettingsAppliedPayload,
   ModeStatePayload,
   ErrorPayload,
+  TradeLogEntry,
 } from '@/types/types'
 
 // ── Backend URL ───────────────────────────────────────────────────────────────
@@ -160,6 +161,16 @@ function _registerEventHandlers(s: Socket): void {
     eventBus.emit(EVENTS.LOG_RECEIVED, data)
   })
 
+  // ── Trade log (activity feed) ─────────────────────────────────────────────
+
+  s.on('tradelog', (data: TradeLogEntry) => {
+    eventBus.emit(EVENTS.TRADELOG_RECEIVED, data)
+  })
+
+  s.on('tradelog:history', (data: TradeLogEntry[]) => {
+    eventBus.emit(EVENTS.TRADELOG_HISTORY, data)
+  })
+
   // ── Backend errors ────────────────────────────────────────────────────────
 
   s.on('error', (data: ErrorPayload) => {
@@ -225,6 +236,13 @@ export function unsubscribeIndicators(): void {
   // or TIMEFRAME_CHANGED. Emitting reset here would wipe state on every
   // component unmount (page nav, tab switch) — not just on symbol/tf change.
   getSocket().emit('indicators:unsubscribe', {})
+}
+
+// ── Trade log helpers ─────────────────────────────────────────────────────────
+
+/** Request last N trade log entries — backend replies with tradelog:history */
+export function fetchTradeLogs(limit = 200): void {
+  getSocket().emit('tradelog:fetch', { limit })
 }
 
 // ── Export socket instance for direct access if needed ───────────────────────

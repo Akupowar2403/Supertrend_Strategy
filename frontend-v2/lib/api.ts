@@ -25,6 +25,7 @@ import type {
   HoldingsResponse,
   PositionsResponse,
   ForwardSummaryResponse,
+  FundsResponse,
   TickerStatus,
   Exchange,
   InstrumentType,
@@ -164,6 +165,16 @@ export async function getPositions(): Promise<PositionsResponse> {
  */
 export async function getForwardSummary(): Promise<ForwardSummaryResponse> {
   const res = await api.get<ForwardSummaryResponse>('/api/forward/summary')
+  return res.data
+}
+
+/**
+ * Fetch available funds / margin.
+ * Live mode       → real equity margin from Zerodha (live_balance, collateral, net)
+ * Forward test    → virtual capital from ForwardTestBroker
+ */
+export async function getFunds(): Promise<FundsResponse> {
+  const res = await api.get<FundsResponse>('/api/funds')
   return res.data
 }
 
