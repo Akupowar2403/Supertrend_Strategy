@@ -138,8 +138,8 @@ async def lifespan(app: FastAPI):
     scheduler.start()
     log.info("Scheduler: Daily auto-login scheduled at 08:30 AM IST")
 
-    # Refresh encrypted credentials for any TOTP account matching KITE_USER_ID.
-    # Ensures DB is always in sync with .env (fixes stale/wrong encrypted values).
+    # Seed / refresh TOTP account from .env credentials.
+    # Creates the account if it doesn't exist; updates credentials if it does.
     try:
         from config.crypto import encrypt as _encrypt
         async with async_session() as db:
@@ -157,8 +157,23 @@ async def lifespan(app: FastAPI):
                 primary.totp_key_encrypted   = _encrypt(zeroda.TOTP_KEY)
                 await db.commit()
                 log.info("Startup: Refreshed credentials for account '%s' from .env", primary.label)
+            elif zeroda.USER_ID and zeroda.API_KEY:
+                new_account = Account(
+                    label                = "Primary",
+                    user_id              = zeroda.USER_ID,
+                    api_key              = zeroda.API_KEY,
+                    api_secret_encrypted = _encrypt(zeroda.API_SECRET),
+                    password_encrypted   = _encrypt(zeroda.PASSWORD),
+                    totp_key_encrypted   = _encrypt(zeroda.TOTP_KEY),
+                    auth_method          = "totp",
+                    is_active            = True,
+                    is_connected         = False,
+                )
+                db.add(new_account)
+                await db.commit()
+                log.info("Startup: Created account for user '%s' from .env", zeroda.USER_ID)
     except Exception as exc:
-        log.warning("Startup: Could not refresh account credentials: %s", exc)
+        log.warning("Startup: Could not seed account credentials: %s", exc)
 
     try:
         async with async_session() as db:
@@ -327,64 +342,111 @@ async def logout():
     return {"logged_out": True}
 
 
+# ── Keycloak code exchange (used by /admin page) ─────────────────────────────
+
+@fastapi_app.post("/api/auth/exchange")
+async def auth_exchange(request: Request):
+    """Exchange a Keycloak authorization code for an access token (no Zerodha)."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    code         = body.get("code")
+    redirect_uri = body.get("redirect_uri")
+    if not code or not redirect_uri:
+        return JSONResponse({"error": "code and redirect_uri required"}, status_code=400)
+    try:
+        import httpx as _httpx
+        async with _httpx.AsyncClient() as hc:
+            r = await hc.post(
+                f"{settings.keycloak_url}/realms/{settings.keycloak_realm}"
+                "/protocol/openid-connect/token",
+                data={
+                    "grant_type":   "authorization_code",
+                    "client_id":    "swts-frontend",
+                    "code":         code,
+                    "redirect_uri": redirect_uri,
+                },
+            )
+            if not r.is_success:
+                return JSONResponse({"error": "code exchange failed"}, status_code=400)
+            return {"access_token": r.json().get("access_token")}
+    except Exception as exc:
+        log.error("auth/exchange error: %s", exc)
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
 # ── Auth login (triggered after Keycloak redirect) ────────────────────────────
 
-@fastapi_app.post("/auth/login")
-async def auth_login():
+@fastapi_app.post("/api/auth/login")
+async def auth_login(request: Request):
     """
     Called by the frontend after Keycloak redirects back with ?code=.
-    Runs TOTP auto-login to get a fresh Zerodha access token,
-    then returns the same shape as /status.
+    Optionally exchanges the Keycloak code for an access token, then
+    runs TOTP auto-login to get a fresh Zerodha access token.
     """
     global _access_token
+
+    # ── Exchange Keycloak code if provided ─────────────────────────────────
+    keycloak_token: str | None = None
     try:
-        async with async_session() as db:
-            # Check if already connected with a valid token
-            result = await db.execute(
-                select(Account).where(
-                    Account.is_active    == True,
-                    Account.is_connected == True,
-                    Account.access_token != None,
-                )
-            )
-            account = result.scalars().first()
-            if account:
-                valid, info = zeroda.verify_token(account.access_token)
-                if valid:
-                    return {
-                        "logged_in": True,
-                        "user":    info["user_name"],
-                        "user_id": info["user_id"],
-                        "ticker":  zeroda.ticker_status(),
-                    }
+        body = await request.json()
+    except Exception:
+        body = {}
 
-            # Not connected — run TOTP auto-login
-            sessions = await load_and_autologin_all(db)
-            if not sessions:
-                return JSONResponse(
-                    {"logged_in": False, "reason": "TOTP auto-login failed"},
-                    status_code=401,
-                )
-            _access_token = next(iter(sessions.values()))
+    code         = body.get("code")
+    redirect_uri = body.get("redirect_uri")
 
+    if code and redirect_uri:
         try:
-            zeroda.init_ticker(_access_token)
+            import httpx as _httpx
+            async with _httpx.AsyncClient() as hc:
+                r = await hc.post(
+                    f"{settings.keycloak_url}/realms/{settings.keycloak_realm}"
+                    "/protocol/openid-connect/token",
+                    data={
+                        "grant_type":   "authorization_code",
+                        "client_id":    "swts-frontend",
+                        "code":         code,
+                        "redirect_uri": redirect_uri,
+                    },
+                )
+                if r.is_success:
+                    keycloak_token = r.json().get("access_token")
+                else:
+                    log.warning("auth/login: Keycloak code exchange failed: %s", r.text)
         except Exception as exc:
-            log.warning("auth/login: ticker init failed: %s", exc)
+            log.warning("auth/login: Keycloak code exchange error: %s", exc)
 
-        valid, info = zeroda.verify_token(_access_token)
-        if valid:
-            return {
-                "logged_in": True,
-                "user":    info["user_name"],
-                "user_id": info["user_id"],
-                "ticker":  zeroda.ticker_status(),
-            }
-        return JSONResponse({"logged_in": False, "reason": info}, status_code=401)
+    # ── Check Keycloak role before allowing dashboard access ───────────────
+    kc_roles: list[str] = []
+    if keycloak_token:
+        try:
+            import base64 as _b64, json as _json
+            p = keycloak_token.split(".")[1]
+            p += "=" * (-len(p) % 4)
+            kc_roles = _json.loads(_b64.urlsafe_b64decode(p)).get("realm_access", {}).get("roles", [])
+            if "revoke" in kc_roles:
+                return JSONResponse(
+                    {"logged_in": False, "reason": "revoked", "keycloak_token": keycloak_token},
+                    status_code=403,
+                )
+            if "admin" not in kc_roles and "approve" not in kc_roles:
+                return JSONResponse(
+                    {"logged_in": False, "reason": "pending", "keycloak_token": keycloak_token},
+                    status_code=403,
+                )
+        except Exception as exc:
+            log.warning("auth/login: role check error: %s", exc)
 
-    except Exception as exc:
-        log.error("auth/login error: %s", exc)
-        return JSONResponse({"logged_in": False, "reason": str(exc)}, status_code=500)
+    # ── Keycloak auth passed — return dashboard access with Zerodha status ──
+    # Zerodha connection is handled separately (8:30 scheduler or manual OAuth).
+    # Do NOT block dashboard access based on Zerodha status here.
+    return {
+        "logged_in":      True,
+        "keycloak_token": keycloak_token,
+        "ticker":         zeroda.ticker_status(),
+    }
 
 
 # ── Status & Ticker REST ──────────────────────────────────────────────────────

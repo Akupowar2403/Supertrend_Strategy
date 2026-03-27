@@ -33,14 +33,18 @@ interface AuthState {
   isLoggedIn:   boolean
   userName:     string
   userId:       string
+  accessToken:  string
   wsConnected:  boolean
   tickerStatus: TickerStatus | null
 }
+
+const TOKEN_KEY = 'swts_access_token'
 
 const initialState: AuthState = {
   isLoggedIn:   false,
   userName:     '',
   userId:       '',
+  accessToken:  typeof window !== 'undefined' ? (localStorage.getItem(TOKEN_KEY) ?? '') : '',
   wsConnected:  false,
   tickerStatus: null,
 }
@@ -49,6 +53,7 @@ const initialState: AuthState = {
 
 type AuthAction =
   | { type: 'SET_AUTH';          payload: { isLoggedIn: boolean; userName: string; userId: string } }
+  | { type: 'SET_ACCESS_TOKEN';  payload: string }
   | { type: 'SET_WS_CONNECTED';  payload: boolean }
   | { type: 'SET_TICKER_STATUS'; payload: TickerStatus }
   | { type: 'LOGOUT' }
@@ -66,6 +71,10 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         userId:     action.payload.userId,
       }
 
+    case 'SET_ACCESS_TOKEN':
+      if (typeof window !== 'undefined') localStorage.setItem(TOKEN_KEY, action.payload)
+      return { ...state, accessToken: action.payload }
+
     case 'SET_WS_CONNECTED':
       return { ...state, wsConnected: action.payload }
 
@@ -73,7 +82,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return { ...state, tickerStatus: action.payload }
 
     case 'LOGOUT':
-      return { ...initialState }
+      if (typeof window !== 'undefined') localStorage.removeItem(TOKEN_KEY)
+      return { ...initialState, accessToken: '' }
 
     default:
       return state
@@ -87,6 +97,7 @@ interface AuthContextValue {
   dispatch: React.Dispatch<AuthAction>
   // Convenience setters
   setAuth:         (isLoggedIn: boolean, userName: string, userId: string) => void
+  setAccessToken:  (token: string) => void
   setTickerStatus: (status: TickerStatus) => void
   logout:          () => void
 }
@@ -102,6 +113,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setAuth = useCallback(
     (isLoggedIn: boolean, userName: string, userId: string) =>
       dispatch({ type: 'SET_AUTH', payload: { isLoggedIn, userName, userId } }),
+    []
+  )
+
+  const setAccessToken = useCallback(
+    (token: string) =>
+      dispatch({ type: 'SET_ACCESS_TOKEN', payload: token }),
     []
   )
 
@@ -131,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ state, dispatch, setAuth, setTickerStatus, logout }}>
+    <AuthContext.Provider value={{ state, dispatch, setAuth, setAccessToken, setTickerStatus, logout }}>
       {children}
     </AuthContext.Provider>
   )

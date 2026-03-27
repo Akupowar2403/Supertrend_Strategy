@@ -55,7 +55,11 @@ api.interceptors.response.use(
       'Unknown error'
     const message = typeof raw === 'string' ? raw : JSON.stringify(raw)
     console.error(`[API] ${error.config?.method?.toUpperCase()} ${error.config?.url} — ${message}`)
-    return Promise.reject(new Error(message))
+    // Preserve the original response so callers can inspect status/data (e.g. reason, keycloak_token)
+    const err = new Error(message) as Error & { response?: typeof error.response; status?: number }
+    err.response = error.response
+    err.status   = error.response?.status
+    return Promise.reject(err)
   }
 )
 
@@ -82,8 +86,8 @@ export async function logoutUser(): Promise<void> {
  * Trigger TOTP auto-login after Keycloak redirects back.
  * Called once when ?code= is detected in the URL.
  */
-export async function authLogin(): Promise<StatusResponse> {
-  const res = await api.post<StatusResponse>('/auth/login')
+export async function authLogin(code?: string, redirectUri?: string): Promise<StatusResponse> {
+  const res = await api.post<StatusResponse>('/api/auth/login', { code, redirect_uri: redirectUri })
   return res.data
 }
 

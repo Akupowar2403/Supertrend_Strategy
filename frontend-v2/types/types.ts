@@ -182,11 +182,12 @@ export interface IndicatorsSubscribePayload {
 // ── REST API — RESPONSE SHAPES ────────────────────────────────────────────────
 
 export interface StatusResponse {
-  logged_in: boolean
-  user?:     string
-  user_id?:  string
-  reason?:   string
-  ticker:    TickerStatus
+  logged_in:       boolean
+  user?:           string
+  user_id?:        string
+  reason?:         string
+  ticker:          TickerStatus
+  keycloak_token?: string
 }
 
 export interface TickerStatus {

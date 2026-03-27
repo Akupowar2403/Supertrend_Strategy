@@ -1,95 +1,120 @@
 'use client'
 
-// Root page — checks /status on load.
-// Logged in  → redirect to /dashboard
-// Logged out → show link to backend login
-
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/store/AuthStore'
 import { getStatus, authLogin } from '@/lib/api'
 
+const KEYCLOAK_URL = process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:8080'
+const APP_URL      = process.env.NEXT_PUBLIC_APP_URL      || 'http://localhost:3000'
+const TOKEN_KEY    = 'swts_access_token'
+
+function isTokenValid(token: string): boolean {
+  try {
+    const p       = token.split('.')[1]
+    const payload = JSON.parse(atob(p + '='.repeat((4 - p.length % 4) % 4)))
+    return payload.exp * 1000 > Date.now()
+  } catch {
+    return false
+  }
+}
+
+function redirectToKeycloak() {
+  const kp = new URLSearchParams({
+    client_id:     'swts-frontend',
+    redirect_uri:  APP_URL,
+    response_type: 'code',
+    scope:         'openid',
+  })
+  window.location.href = `${KEYCLOAK_URL}/realms/SWTS/protocol/openid-connect/auth?${kp}`
+}
+
 export default function HomePage() {
-  const router = useRouter()
-  const [checking, setChecking] = useState(true)
-  const [error, setError]       = useState('')
+  const router          = useRouter()
+  const { setAccessToken } = useAuth()
+  const ran             = useRef(false)
 
   useEffect(() => {
+    if (ran.current) return
+    ran.current = true
+
     const params = new URLSearchParams(window.location.search)
-    const hasCode = params.has('code')
+    const code   = params.get('code')
 
-    // If Keycloak just redirected back with ?code=, trigger TOTP login first
-    const loginFn = hasCode ? authLogin : getStatus
+    // ── Case 0: Already showing error (pending/revoked) — do nothing ─────
+    if (params.get('error')) return
 
-    loginFn()
-      .then(status => {
-        if (status.logged_in) {
-          // Clean the ?code= from URL before navigating
-          window.history.replaceState({}, '', '/')
+    // ── Case 1: Returning from Keycloak with ?code= ──────────────────────
+    if (code) {
+      window.history.replaceState({}, '', '/')
+      authLogin(code, APP_URL)
+        .then(status => {
+          if (status.keycloak_token) setAccessToken(status.keycloak_token)
           router.replace('/dashboard')
-        } else {
-          // Not logged in — redirect to Keycloak login
-          const keycloakUrl = 'http://localhost:8080/realms/SWTS/protocol/openid-connect/auth'
-          const kp = new URLSearchParams({
-            client_id:     'swts-frontend',
-            redirect_uri:  'http://localhost:3000',
-            response_type: 'code',
-          })
-          window.location.href = `${keycloakUrl}?${kp}`
-        }
-      })
-      .catch(err => {
-        setError(err.message || 'Could not reach backend')
-        setChecking(false)
-      })
-  }, [router])
+        })
+        .catch(err => {
+          const reason = err?.response?.data?.reason
+          const token  = err?.response?.data?.keycloak_token
+          if (reason === 'pending' || reason === 'revoked') {
+            // Clear any stored token so the localStorage check below doesn't
+            // redirect a pending/revoked user straight to /dashboard on reload.
+            localStorage.removeItem(TOKEN_KEY)
+            window.location.replace(`/?error=${reason}`)
+          } else {
+            if (token) setAccessToken(token)
+            redirectToKeycloak()
+          }
+        })
+      return
+    }
 
-  if (checking) {
+    // ── Case 2: Valid token in localStorage → go straight to dashboard ───
+    const stored = localStorage.getItem(TOKEN_KEY) ?? ''
+    if (isTokenValid(stored)) {
+      router.replace('/dashboard')
+      return
+    }
+
+    // ── Case 3: Check Zerodha session ────────────────────────────────────
+    getStatus()
+      .then(status => {
+        if (status.logged_in) router.replace('/dashboard')
+        else redirectToKeycloak()
+      })
+      .catch(() => redirectToKeycloak())
+  }, [router, setAccessToken])
+
+  // Show error from ?error= param (pending / revoked)
+  const errorParam = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('error')
+    : null
+
+  if (errorParam === 'pending') {
     return (
-      <div className="flex items-center justify-center min-h-screen text-slate-500">
-        Checking auth…
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="bg-white border border-slate-200 rounded-xl p-8 w-full max-w-sm text-center shadow-sm">
+          <h1 className="text-xl font-bold mb-1">TrendEdge</h1>
+          <p className="text-amber-600 text-sm mt-3 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            Your account is pending admin approval. Please wait.
+          </p>
+        </div>
       </div>
     )
   }
 
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="bg-white border border-slate-200 rounded-xl p-8 w-full max-w-sm text-center shadow-sm">
-        <div className="flex items-center justify-center gap-2.5 mb-1">
-          <svg viewBox="0 0 36 36" fill="none" className="w-8 h-8 shrink-0">
-            <rect width="36" height="36" rx="9" fill="#2563eb"/>
-            <polyline points="7,26 13,18 20,21 29,11" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="29" cy="11" r="2.5" fill="white"/>
-          </svg>
-          <h1 className="text-xl font-bold">TrendEdge</h1>
-        </div>
-        <p className="text-slate-500 text-sm mb-6">Supertrend & ATR Trading System</p>
-
-        {error && (
-          <p className="text-red-500 text-sm mb-4 bg-red-50 border border-red-200 rounded px-3 py-2">
-            {error}
+  if (errorParam === 'revoked') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="bg-white border border-slate-200 rounded-xl p-8 w-full max-w-sm text-center shadow-sm">
+          <h1 className="text-xl font-bold mb-1">TrendEdge</h1>
+          <p className="text-red-500 text-sm mt-3 bg-red-50 border border-red-200 rounded px-3 py-2">
+            Your account access has been revoked. Contact support.
           </p>
-        )}
-
-        <p className="text-sm text-slate-600 mb-4">
-          Not logged in. Login via the backend — after OAuth completes, come back here.
-        </p>
-
-        <a
-          href="http://localhost:8000"
-          target="_blank"
-          rel="noreferrer"
-          className="block w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-        >
-          Login with Zerodha →
-        </a>
-
-        <button
-          onClick={() => { setChecking(true); setError(''); getStatus().then(s => { if (s.logged_in) router.replace('/dashboard'); else setChecking(false) }).catch(e => { setError(e.message); setChecking(false) }) }}
-          className="mt-3 text-sm text-blue-600 hover:underline"
-        >
-          I&apos;ve logged in — check again
-        </button>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  // Blank while redirecting — no visible flash
+  return null
 }
