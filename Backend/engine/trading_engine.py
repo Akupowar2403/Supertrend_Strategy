@@ -561,6 +561,13 @@ class TradingEngine:
             "qty": qty, "price": exit_price, "order_id": order_id,
         })
 
+        # Wait for actual fill before saving trade
+        fill        = self._wait_for_fill(order_id)
+        exit_price  = fill["fill_price"] if fill["status"] == "COMPLETE" and fill["fill_price"] > 0 else exit_price
+        pnl_points  = round(exit_price - entry_price, 2)
+        pnl_amount  = round(pnl_points * qty, 2)
+        result      = "PROFIT" if pnl_points >= 0 else "LOSS"
+
         save_trade_sync({
             "symbol":           self.symbol,
             "instrument_token": self.instrument_token,
@@ -580,55 +587,80 @@ class TradingEngine:
     # ── Exit all positions (called on engine stop) ─────────────────────────────
 
     def _exit_all_positions(self, reason: str = "ENGINE_STOP") -> None:
-        """Close any open position at current market price before engine stops."""
+        """
+        Close ALL open positions in the account at current market price.
+        Called on engine stop/shutdown — acts as a full square-off.
+        Uses each position's own symbol/token/exchange so manual trades
+        in other instruments are also closed correctly.
+        """
         positions = self.broker.get_positions()
         if not positions:
             return
 
-        # Best available exit price: live tick → confirmed close
-        exit_price = 0.0
         ticks = self.broker.get_latest_ticks()
-        tick  = ticks.get(self.instrument_token)
-        if tick and tick.get("last_price"):
-            exit_price = float(tick["last_price"])
-        elif not self.latest_df.empty:
-            exit_price = float(self.latest_df.iloc[-1]["close"])
 
         for position in positions:
-            qty         = position.get("qty", self.qty)
+            sym      = position.get("symbol", self.symbol)
+            token    = position.get("token", self.instrument_token)
+            exchange = position.get("exchange", self.exchange)
+            qty      = position.get("qty", self.qty)
             entry_price = position.get("entry_price", 0.0)
-            pnl_points  = round(exit_price - entry_price, 2)
-            pnl_amount  = round(pnl_points * qty, 2)
-            result      = "PROFIT" if pnl_points >= 0 else "LOSS"
+
+            # Best exit price: live tick for this token → last known close
+            tick = ticks.get(token)
+            est_exit = float(tick["last_price"]) if tick and tick.get("last_price") else (
+                float(self.latest_df.iloc[-1]["close"]) if not self.latest_df.empty else 0.0
+            )
 
             log.info(
-                "[ENGINE] STOP EXIT — reason=%s | entry=%.2f | exit=%.2f | P&L=%.2f (%s)",
-                reason, entry_price, exit_price, pnl_points, result,
+                "[ENGINE] STOP EXIT — reason=%s | %s | qty=%d | entry=%.2f | est_exit=%.2f",
+                reason, sym, qty, entry_price, est_exit,
             )
 
             emit_sync("exit:triggered", {
                 "reason":      reason,
+                "symbol":      sym,
                 "entry_price": entry_price,
-                "exit_price":  exit_price,
-                "pnl_points":  pnl_points,
-                "pnl_amount":  pnl_amount,
-                "result":      result,
+                "exit_price":  est_exit,
+                "pnl_points":  round(est_exit - entry_price, 2),
+                "pnl_amount":  round((est_exit - entry_price) * qty, 2),
+                "result":      "PROFIT" if est_exit >= entry_price else "LOSS",
             })
 
             order_id = self.broker.place_order(
-                symbol=self.symbol, token=self.instrument_token,
+                symbol=sym, token=token,
                 qty=qty, transaction_type="SELL",
                 product="MIS", order_type="MARKET",
-                price=exit_price, exchange=self.exchange,
+                exchange=exchange,
             )
             emit_sync("order:placed", {
-                "type": "SELL", "symbol": self.symbol,
-                "qty": qty, "price": exit_price, "order_id": order_id,
+                "type": "SELL", "symbol": sym,
+                "qty": qty, "price": est_exit, "order_id": order_id,
             })
 
+            # Wait for actual fill before saving trade
+            fill        = self._wait_for_fill(order_id)
+            exit_price  = fill["fill_price"] if fill["status"] == "COMPLETE" and fill["fill_price"] > 0 else est_exit
+            pnl_points  = round(exit_price - entry_price, 2)
+            pnl_amount  = round(pnl_points * qty, 2)
+            result      = "PROFIT" if pnl_points >= 0 else "LOSS"
+
+            save_trade_log_sync({
+                "event_type":  "EXIT_TRIGGERED",
+                "symbol":      sym,
+                "broker_mode": settings.broker_mode,
+                "details": {
+                    "reason":      reason,
+                    "entry_price": entry_price,
+                    "exit_price":  exit_price,
+                    "pnl_points":  pnl_points,
+                    "pnl_amount":  pnl_amount,
+                    "result":      result,
+                },
+            })
             save_trade_sync({
-                "symbol":           self.symbol,
-                "instrument_token": self.instrument_token,
+                "symbol":           sym,
+                "instrument_token": token,
                 "qty":              qty,
                 "entry_price":      entry_price,
                 "exit_price":       exit_price,

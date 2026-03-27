@@ -216,6 +216,7 @@ class ZerodhaBroker(BrokerABC):
             result.append({
                 "symbol":      p.get("tradingsymbol"),
                 "token":       token,
+                "exchange":    p.get("exchange", "NSE"),
                 "qty":         qty,
                 "entry_price": entry_price,
                 "peak_price":  self._peak_prices.get(token, entry_price),
