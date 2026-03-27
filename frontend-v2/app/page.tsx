@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/store/AuthStore'
-import { getStatus, authLogin } from '@/lib/api'
+import { authLogin } from '@/lib/api'
 
 const KEYCLOAK_URL = process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:8080'
 const APP_URL      = process.env.NEXT_PUBLIC_APP_URL      || 'http://localhost:3000'
@@ -75,13 +75,12 @@ export default function HomePage() {
       return
     }
 
-    // ── Case 3: Check Zerodha session ────────────────────────────────────
-    getStatus()
-      .then(status => {
-        if (status.logged_in) router.replace('/dashboard')
-        else redirectToKeycloak()
-      })
-      .catch(() => redirectToKeycloak())
+    // ── Case 3: No valid KC token → must re-authenticate via Keycloak ───
+    // Cannot go directly to /dashboard here — dashboard requires a valid KC
+    // token. Sending the user there without one causes a redirect loop:
+    // dashboard bounces back to / because isTokenValid() fails, which then
+    // sends them back to dashboard, ad infinitum.
+    redirectToKeycloak()
   }, [router, setAccessToken])
 
   // Show error from ?error= param (pending / revoked)

@@ -687,130 +687,73 @@ function ExitSettingsCard({
       onChange({ session_end_time: draft.session_end_time })
   }
 
-  const unitLabel = (type: 'points' | 'percentage') =>
-    type === 'points' ? 'points' : '%'
-
   return (
     <div
-      className="rounded-2xl px-6 py-5"
+      className="rounded-2xl px-5 py-4 flex items-center gap-0"
       style={{
         background:     'var(--theme-glass-card)',
         border:         '1px solid var(--theme-glass-border)',
         backdropFilter: 'blur(20px) saturate(160%)',
       }}
     >
-      {/* Header */}
-      <div className="flex items-center gap-2.5 mb-5">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
-          className="w-4 h-4 shrink-0" style={{ color: 'var(--theme-accent)' }}>
-          <path strokeLinecap="round" strokeLinejoin="round"
-            d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-        </svg>
-        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--theme-text-ghost)' }}>
-          Exit Conditions
-        </p>
-        <p className="text-xs ml-1" style={{ color: 'var(--theme-text-ghost)' }}>
-          — rules that auto-close your position
-        </p>
-      </div>
 
-      <div className="flex flex-col gap-0" style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--theme-glass-border)' }}>
-
-        {/* ── Row 1: Take Profit ──────────────────────────────────────────── */}
-        <ExitRow
+      {/* ── Take Profit ─────────────────────────────────────────────────── */}
+      <ExitGroup label="Take Profit" color="var(--theme-profit)">
+        <div className="flex rounded-lg overflow-hidden mb-2"
+          style={{ border: '1px solid var(--theme-glass-border)' }}>
+          {(['points', 'percentage', 'atr_multiple'] as TargetType[]).map((t, i) => (
+            <button key={t} onClick={() => onChange({ target_type: t })}
+              className="px-2.5 py-1 text-xs font-bold transition-colors"
+              style={{
+                background:  settings.target_type === t ? 'var(--theme-profit-bg)' : 'transparent',
+                color:       settings.target_type === t ? 'var(--theme-profit)' : 'var(--theme-text-muted)',
+                borderRight: i < 2 ? '1px solid var(--theme-glass-border)' : 'none',
+              }}>
+              {t === 'points' ? 'Pts' : t === 'percentage' ? '%' : 'ATR×'}
+            </button>
+          ))}
+        </div>
+        <ExitInput
+          value={draft.target_value}
+          unit={settings.target_type === 'points' ? 'pts' : settings.target_type === 'percentage' ? '%' : '×'}
+          onChange={v => setDraft(d => ({ ...d, target_value: v }))}
+          onBlur={() => commitNumber('target_value')}
           color="var(--theme-profit)"
-          bg="var(--theme-profit-bg)"
-          border="var(--theme-profit-border)"
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-              <polyline strokeLinecap="round" strokeLinejoin="round" points="22 7 13.5 15.5 8.5 10.5 2 17" />
-              <polyline strokeLinecap="round" strokeLinejoin="round" points="16 7 22 7 22 13" />
-            </svg>
-          }
-          label="Take Profit"
-          description={
-            settings.target_type === 'points'
-              ? `Exit when price rises ${draft.target_value} pts above entry`
-              : `Exit when price rises ${draft.target_value}% above entry`
-          }
-        >
-          <TypePill
-            options={[
-              { value: 'points',     label: 'Fixed Points' },
-              { value: 'percentage', label: 'Percentage %' },
-            ]}
-            active={settings.target_type === 'points' ? 'points' : 'percentage'}
-            onSelect={v => onChange({ target_type: v as TargetType })}
-            activeColor="var(--theme-profit)"
-            activeBg="var(--theme-profit-bg)"
-            activeBorder="var(--theme-profit-border)"
-          />
-          <NumberInput
-            value={draft.target_value}
-            unit={unitLabel(settings.target_type === 'points' ? 'points' : 'percentage')}
-            onChange={v => setDraft(d => ({ ...d, target_value: v }))}
-            onBlur={() => commitNumber('target_value')}
-          />
-        </ExitRow>
+        />
+      </ExitGroup>
 
-        <RowDivider />
+      <ColDivider />
 
-        {/* ── Row 2: Stop Loss ────────────────────────────────────────────── */}
-        <ExitRow
+      {/* ── Stop Loss ───────────────────────────────────────────────────── */}
+      <ExitGroup label="Stop Loss" color="var(--theme-loss)">
+        <div className="flex rounded-lg overflow-hidden mb-2"
+          style={{ border: '1px solid var(--theme-glass-border)' }}>
+          {(['points', 'percentage'] as SlType[]).map((t, i) => (
+            <button key={t} onClick={() => onChange({ sl_type: t })}
+              className="px-2.5 py-1 text-xs font-bold transition-colors"
+              style={{
+                background:  settings.sl_type === t ? 'var(--theme-loss-bg)' : 'transparent',
+                color:       settings.sl_type === t ? 'var(--theme-loss)' : 'var(--theme-text-muted)',
+                borderRight: i === 0 ? '1px solid var(--theme-glass-border)' : 'none',
+              }}>
+              {t === 'points' ? 'Pts' : '%'}
+            </button>
+          ))}
+        </div>
+        <ExitInput
+          value={draft.sl_value}
+          unit={settings.sl_type === 'points' ? 'pts' : '%'}
+          onChange={v => setDraft(d => ({ ...d, sl_value: v }))}
+          onBlur={() => commitNumber('sl_value')}
           color="var(--theme-loss)"
-          bg="var(--theme-loss-bg)"
-          border="var(--theme-loss-border)"
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-              <polyline strokeLinecap="round" strokeLinejoin="round" points="22 17 13.5 8.5 8.5 13.5 2 7" />
-              <polyline strokeLinecap="round" strokeLinejoin="round" points="16 17 22 17 22 11" />
-            </svg>
-          }
-          label="Stop Loss"
-          description={
-            settings.sl_type === 'points'
-              ? `Exit when price drops ${draft.sl_value} pts below entry`
-              : `Exit when price drops ${draft.sl_value}% below entry`
-          }
-        >
-          <TypePill
-            options={[
-              { value: 'points',     label: 'Fixed Points' },
-              { value: 'percentage', label: 'Percentage %' },
-            ]}
-            active={settings.sl_type}
-            onSelect={v => onChange({ sl_type: v as SlType })}
-            activeColor="var(--theme-loss)"
-            activeBg="var(--theme-loss-bg)"
-            activeBorder="var(--theme-loss-border)"
-          />
-          <NumberInput
-            value={draft.sl_value}
-            unit={unitLabel(settings.sl_type)}
-            onChange={v => setDraft(d => ({ ...d, sl_value: v }))}
-            onBlur={() => commitNumber('sl_value')}
-          />
-        </ExitRow>
+        />
+      </ExitGroup>
 
-        <RowDivider />
+      <ColDivider />
 
-        {/* ── Row 3: Trailing Stop Loss ────────────────────────────────────── */}
-        <ExitRow
-          color="var(--theme-warn)"
-          bg="var(--theme-warn-bg)"
-          border="var(--theme-warn-border)"
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
-          }
-          label="Trailing Stop Loss"
-          description={
-            settings.trailing_sl
-              ? `SL moves up with price — exits if price drops ${draft.trail_value} pts from peak`
-              : 'Disabled — stop loss stays fixed at entry level'
-          }
-        >
+      {/* ── Trailing SL ─────────────────────────────────────────────────── */}
+      <ExitGroup label="Trailing SL" color="var(--theme-warn)">
+        <div className="flex items-center gap-2 mb-2" style={{ height: '26px' }}>
           <ToggleSwitch
             on={settings.trailing_sl}
             onToggle={() => onChange({ trailing_sl: !settings.trailing_sl })}
@@ -818,35 +761,25 @@ function ExitSettingsCard({
             bg="var(--theme-warn-bg)"
             border="var(--theme-warn-border)"
           />
-          {settings.trailing_sl && (
-            <NumberInput
-              value={draft.trail_value}
-              unit="pts"
-              onChange={v => setDraft(d => ({ ...d, trail_value: v }))}
-              onBlur={() => commitNumber('trail_value')}
-            />
-          )}
-        </ExitRow>
+          <span className="text-xs font-semibold" style={{ color: settings.trailing_sl ? 'var(--theme-warn)' : 'var(--theme-text-ghost)' }}>
+            {settings.trailing_sl ? 'ON' : 'OFF'}
+          </span>
+        </div>
+        <ExitInput
+          value={draft.trail_value}
+          unit="pts"
+          onChange={v => setDraft(d => ({ ...d, trail_value: v }))}
+          onBlur={() => commitNumber('trail_value')}
+          color="var(--theme-warn)"
+          disabled={!settings.trailing_sl}
+        />
+      </ExitGroup>
 
-        <RowDivider />
+      <ColDivider />
 
-        {/* ── Row 4: Supertrend Red ────────────────────────────────────────── */}
-        <ExitRow
-          color="var(--theme-loss)"
-          bg="var(--theme-loss-bg)"
-          border="var(--theme-loss-border)"
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-            </svg>
-          }
-          label="Exit on Supertrend Red"
-          description={
-            settings.exit_on_st_red
-              ? 'Exit immediately when Supertrend flips from green (bullish) to red (bearish)'
-              : 'Disabled — Supertrend flip will not trigger an exit'
-          }
-        >
+      {/* ── ST Red Exit ─────────────────────────────────────────────────── */}
+      <ExitGroup label="ST Red Exit" color="var(--theme-loss)">
+        <div className="flex items-center gap-2 mb-2" style={{ height: '26px' }}>
           <ToggleSwitch
             on={settings.exit_on_st_red}
             onToggle={() => onChange({ exit_on_st_red: !settings.exit_on_st_red })}
@@ -854,161 +787,98 @@ function ExitSettingsCard({
             bg="var(--theme-loss-bg)"
             border="var(--theme-loss-border)"
           />
-        </ExitRow>
-
-        <RowDivider />
-
-        {/* ── Row 5: Session End ───────────────────────────────────────────── */}
-        <ExitRow
-          color="var(--theme-accent)"
-          bg="var(--theme-accent-soft)"
-          border="var(--theme-accent-border)"
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
-              <circle cx="12" cy="12" r="10" />
-              <polyline strokeLinecap="round" strokeLinejoin="round" points="12 6 12 12 16 14" />
-            </svg>
-          }
-          label="Session End — Force Exit"
-          description={`Force-close all open positions at ${draft.session_end_time} IST (NSE market close)`}
-        >
-          <input
-            type="time"
-            value={draft.session_end_time}
-            onChange={e => setDraft(d => ({ ...d, session_end_time: e.target.value }))}
-            onBlur={commitTime}
-            className="h-9 w-28 rounded-xl px-3 text-sm font-mono font-bold focus:outline-none"
-            style={{
-              background:  'var(--theme-input-bg)',
-              border:      '1px solid var(--theme-input-border)',
-              color:       'var(--theme-input-text)',
-              colorScheme: 'dark',
-            }}
-          />
-        </ExitRow>
-
-      </div>
-    </div>
-  )
-}
-
-// ── ExitRow — one condition row ───────────────────────────────────────────────
-
-function ExitRow({
-  color, bg, border, icon, label, description, children,
-}: {
-  color:       string
-  bg:          string
-  border:      string
-  icon:        React.ReactNode
-  label:       string
-  description: string
-  children:    React.ReactNode
-}) {
-  return (
-    <div
-      className="flex items-center gap-5 px-5 py-3.5"
-      style={{ background: 'var(--theme-glass-panel)' }}
-    >
-      {/* Left accent icon */}
-      <div
-        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: bg, border: `1px solid ${border}`, color }}
-      >
-        {icon}
-      </div>
-
-      {/* Label + description */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold leading-none mb-1" style={{ color: 'var(--theme-text-primary)' }}>
-          {label}
+          <span className="text-xs font-semibold" style={{ color: settings.exit_on_st_red ? 'var(--theme-loss)' : 'var(--theme-text-ghost)' }}>
+            {settings.exit_on_st_red ? 'ON' : 'OFF'}
+          </span>
+        </div>
+        <p className="text-xs" style={{ color: 'var(--theme-text-ghost)' }}>
+          Exit when ST flips red
         </p>
-        <p className="text-xs leading-snug" style={{ color: 'var(--theme-text-muted)' }}>
-          {description}
-        </p>
-      </div>
+      </ExitGroup>
 
-      {/* Controls */}
-      <div className="flex items-center gap-2.5 shrink-0">
-        {children}
-      </div>
-    </div>
-  )
-}
+      <ColDivider />
 
-// ── TypePill — Points / Percentage selector ────────────────────────────────────
-
-function TypePill({
-  options, active, onSelect,
-  activeColor, activeBg, activeBorder,
-}: {
-  options:       { value: string; label: string }[]
-  active:        string
-  onSelect:      (v: string) => void
-  activeColor:   string
-  activeBg:      string
-  activeBorder:  string
-}) {
-  return (
-    <div
-      className="flex rounded-xl overflow-hidden"
-      style={{ border: '1px solid var(--theme-glass-border)' }}
-    >
-      {options.map((opt, i) => (
-        <button
-          key={opt.value}
-          onClick={() => onSelect(opt.value)}
-          className="px-3 py-1.5 text-xs font-bold transition-colors"
+      {/* ── Session End ─────────────────────────────────────────────────── */}
+      <ExitGroup label="Session End" color="var(--theme-accent)">
+        <div style={{ height: '26px', marginBottom: '8px' }} />
+        <input
+          type="time"
+          value={draft.session_end_time}
+          onChange={e => setDraft(d => ({ ...d, session_end_time: e.target.value }))}
+          onBlur={commitTime}
+          className="h-8 w-24 rounded-lg px-2 text-sm font-mono font-bold focus:outline-none"
           style={{
-            background:  active === opt.value ? activeBg      : 'transparent',
-            color:       active === opt.value ? activeColor   : 'var(--theme-text-muted)',
-            borderRight: i < options.length - 1 ? '1px solid var(--theme-glass-border)' : 'none',
+            background:  'var(--theme-input-bg)',
+            border:      '1px solid var(--theme-input-border)',
+            color:       'var(--theme-accent)',
+            colorScheme: 'dark',
           }}
-        >
-          {opt.label}
-        </button>
-      ))}
+        />
+      </ExitGroup>
+
     </div>
   )
 }
 
-// ── NumberInput ───────────────────────────────────────────────────────────────
+// ── ExitGroup — labelled column in the horizontal bar ─────────────────────────
 
-function NumberInput({
-  value, unit, onChange, onBlur,
-}: {
-  value:    string
-  unit:     string
-  onChange: (v: string) => void
-  onBlur:   () => void
+function ExitGroup({ label, color, children }: {
+  label:    string
+  color:    string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex-1 flex flex-col px-4 py-1">
+      <p className="text-2xs font-bold uppercase tracking-widest mb-2.5" style={{ color }}>
+        {label}
+      </p>
+      {children}
+    </div>
+  )
+}
+
+// ── ExitInput — value + unit input ────────────────────────────────────────────
+
+function ExitInput({ value, unit, onChange, onBlur, color, disabled }: {
+  value:     string
+  unit:      string
+  onChange:  (v: string) => void
+  onBlur:    () => void
+  color:     string
+  disabled?: boolean
 }) {
   return (
     <div
-      className="flex items-center gap-1.5 h-9 px-3 rounded-xl"
+      className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg"
       style={{
         background: 'var(--theme-input-bg)',
-        border:     '1px solid var(--theme-input-border)',
+        border:     `1px solid var(--theme-input-border)`,
+        opacity:    disabled ? 0.4 : 1,
       }}
     >
       <input
         type="number" min={0.1} step={0.5}
         value={value}
+        disabled={disabled}
         onChange={e => onChange(e.target.value)}
         onBlur={onBlur}
-        className="w-12 bg-transparent text-sm font-mono font-bold text-center focus:outline-none"
-        style={{ color: 'var(--theme-input-text)' }}
+        className="w-14 bg-transparent text-sm font-mono font-bold focus:outline-none"
+        style={{ color }}
       />
-      <span className="text-xs font-semibold" style={{ color: 'var(--theme-text-ghost)' }}>
+      <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--theme-text-ghost)' }}>
         {unit}
       </span>
     </div>
   )
 }
 
-// ── RowDivider ────────────────────────────────────────────────────────────────
+// ── ColDivider — vertical separator between groups ────────────────────────────
 
-function RowDivider() {
-  return <div className="h-px" style={{ background: 'var(--theme-glass-border)' }} />
+function ColDivider() {
+  return (
+    <div className="w-px self-stretch shrink-0 mx-1"
+      style={{ background: 'var(--theme-glass-border)' }} />
+  )
 }
 
 // ── ToggleSwitch ──────────────────────────────────────────────────────────────
