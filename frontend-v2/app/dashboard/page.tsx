@@ -723,7 +723,7 @@ function ExitSettingsCard({
           style={{ border: '1px solid var(--theme-glass-border)' }}>
           {(['points', 'percentage', 'atr_multiple'] as TargetType[]).map((t, i) => (
             <button key={t} onClick={() => onChange({ target_type: t })}
-              className="px-2.5 py-1 text-xs font-bold transition-colors"
+              className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold transition-colors"
               style={{
                 background:  settings.target_type === t ? 'var(--theme-profit-bg)' : 'transparent',
                 color:       settings.target_type === t ? 'var(--theme-profit)' : 'var(--theme-text-muted)',
@@ -750,7 +750,7 @@ function ExitSettingsCard({
           style={{ border: '1px solid var(--theme-glass-border)' }}>
           {(['points', 'percentage'] as SlType[]).map((t, i) => (
             <button key={t} onClick={() => onChange({ sl_type: t })}
-              className="px-2.5 py-1 text-xs font-bold transition-colors"
+              className="px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-bold transition-colors"
               style={{
                 background:  settings.sl_type === t ? 'var(--theme-loss-bg)' : 'transparent',
                 color:       settings.sl_type === t ? 'var(--theme-loss)' : 'var(--theme-text-muted)',
@@ -781,7 +781,7 @@ function ExitSettingsCard({
             bg="var(--theme-warn-bg)"
             border="var(--theme-warn-border)"
           />
-          <span className="text-xs font-semibold" style={{ color: settings.trailing_sl ? 'var(--theme-warn)' : 'var(--theme-text-ghost)' }}>
+          <span className="text-[10px] sm:text-xs font-semibold" style={{ color: settings.trailing_sl ? 'var(--theme-warn)' : 'var(--theme-text-ghost)' }}>
             {settings.trailing_sl ? 'ON' : 'OFF'}
           </span>
         </div>
@@ -807,11 +807,11 @@ function ExitSettingsCard({
             bg="var(--theme-loss-bg)"
             border="var(--theme-loss-border)"
           />
-          <span className="text-xs font-semibold" style={{ color: settings.exit_on_st_red ? 'var(--theme-loss)' : 'var(--theme-text-ghost)' }}>
+          <span className="text-[10px] sm:text-xs font-semibold" style={{ color: settings.exit_on_st_red ? 'var(--theme-loss)' : 'var(--theme-text-ghost)' }}>
             {settings.exit_on_st_red ? 'ON' : 'OFF'}
           </span>
         </div>
-        <p className="text-xs" style={{ color: 'var(--theme-text-ghost)' }}>
+        <p className="text-[10px] sm:text-xs" style={{ color: 'var(--theme-text-ghost)' }}>
           Exit when ST flips red
         </p>
       </ExitGroup>
@@ -849,7 +849,7 @@ function ExitGroup({ label, color, children }: {
 }) {
   return (
     <div className="w-[calc(50%-4px)] sm:w-auto sm:flex-1 flex flex-col px-2 sm:px-4 py-1">
-      <p className="text-2xs font-bold uppercase tracking-widest mb-2.5" style={{ color }}>
+      <p className="text-[9px] sm:text-2xs font-bold uppercase tracking-widest mb-1.5 sm:mb-2.5" style={{ color }}>
         {label}
       </p>
       {children}
@@ -869,7 +869,7 @@ function ExitInput({ value, unit, onChange, onBlur, color, disabled }: {
 }) {
   return (
     <div
-      className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg"
+      className="flex items-center gap-1 sm:gap-1.5 h-7 sm:h-8 px-1.5 sm:px-2.5 rounded-lg"
       style={{
         background: 'var(--theme-input-bg)',
         border:     `1px solid var(--theme-input-border)`,
@@ -885,7 +885,7 @@ function ExitInput({ value, unit, onChange, onBlur, color, disabled }: {
         className="w-10 sm:w-14 bg-transparent text-xs sm:text-sm font-mono font-bold focus:outline-none"
         style={{ color }}
       />
-      <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--theme-text-ghost)' }}>
+      <span className="text-[10px] sm:text-xs font-semibold shrink-0" style={{ color: 'var(--theme-text-ghost)' }}>
         {unit}
       </span>
     </div>

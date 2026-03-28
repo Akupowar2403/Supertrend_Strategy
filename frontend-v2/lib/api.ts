@@ -213,7 +213,7 @@ export async function saveZerodhaCredentials(creds: {
   password:   string
   totp_key:   string
 }): Promise<ZerodhaCredentialsResponse> {
-  const res = await api.post<ZerodhaCredentialsResponse>('/api/zerodha/credentials', creds)
+  const res = await api.post<ZerodhaCredentialsResponse>('/api/zerodha/credentials', creds, { timeout: 60000 })
   return res.data
 }
 
