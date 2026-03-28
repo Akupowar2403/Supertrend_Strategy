@@ -31,7 +31,7 @@ export default function PortfolioPage() {
 
       {/* ── Page header ───────────────────────────────────────────────────── */}
       <div
-        className="shrink-0 px-8 py-6 relative overflow-hidden"
+        className="shrink-0 px-4 py-4 sm:px-8 sm:py-6 relative overflow-hidden"
         style={{ borderBottom: '1px solid var(--theme-glass-border)' }}
       >
         {/* Glow decoration */}
@@ -41,9 +41,9 @@ export default function PortfolioPage() {
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Icon box */}
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0"
               style={{ background: 'var(--theme-accent-soft)', border: '1px solid var(--theme-accent-border)', boxShadow: 'var(--theme-accent-glow)' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-6 h-6"
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4 sm:w-6 sm:h-6"
                 style={{ color: 'var(--theme-accent)' }}>
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
                 <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
@@ -55,7 +55,7 @@ export default function PortfolioPage() {
                 style={{ color: 'var(--theme-accent)' }}>
                 Account
               </p>
-              <h1 className="font-display text-3xl font-bold"
+              <h1 className="font-display text-xl sm:text-3xl font-bold"
                 style={{ color: 'var(--theme-text-primary)' }}>
                 Portfolio
               </h1>
@@ -79,7 +79,7 @@ export default function PortfolioPage() {
       </div>
 
       {/* ── Content ───────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-auto p-6 flex flex-col gap-6">
+      <div className="flex-1 overflow-auto p-3 sm:p-6 flex flex-col gap-4 sm:gap-6">
         {loading ? (
           <LoadingCards />
         ) : (
@@ -94,6 +94,7 @@ export default function PortfolioPage() {
             {isLive && holdings && (holdings.holdings as LiveHolding[]).length > 0 && (
               <section>
                 <SectionHeader>Holdings</SectionHeader>
+                <div className="overflow-x-auto">
                 <GlassTable
                   headers={['Symbol', 'Exchange', 'Qty', 'Avg Price', 'LTP', 'P&L', 'Day %', 'Value']}
                 >
@@ -122,6 +123,7 @@ export default function PortfolioPage() {
                     </GlassRow>
                   ))}
                 </GlassTable>
+                </div>
               </section>
             )}
 
@@ -130,6 +132,7 @@ export default function PortfolioPage() {
               <section>
                 <SectionHeader>Open Positions</SectionHeader>
                 {isLive ? (
+                  <div className="overflow-x-auto">
                   <GlassTable
                     headers={['Symbol', 'Exchange', 'Qty', 'Avg Price', 'LTP', 'P&L', 'M2M', 'Product']}
                   >
@@ -158,6 +161,7 @@ export default function PortfolioPage() {
                       </GlassRow>
                     ))}
                   </GlassTable>
+                  </div>
                 ) : (
                   <div
                     className="rounded-2xl p-6 space-y-3"
@@ -223,13 +227,13 @@ export default function PortfolioPage() {
 function LiveFundsCard({ data }: { data: FundsResponse }) {
   return (
     <div
-      className="glass-card rounded-2xl p-6"
+      className="glass-card rounded-2xl p-4 sm:p-6"
     >
-      <p className="text-xs font-bold uppercase tracking-widest mb-5"
+      <p className="text-xs font-bold uppercase tracking-widest mb-4 sm:mb-5"
         style={{ color: 'var(--theme-accent)' }}>
         Live Capital — Zerodha Equity
       </p>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-3">
         <BigStat
           label="Live Balance"
           value={`₹${data.live_balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -263,13 +267,13 @@ function ForwardSummaryCard({ data }: { data: ForwardTestHolding | undefined }) 
 
   return (
     <div
-      className="glass-card rounded-2xl p-6"
+      className="glass-card rounded-2xl p-4 sm:p-6"
     >
-      <p className="text-xs font-bold uppercase tracking-widest mb-5"
+      <p className="text-xs font-bold uppercase tracking-widest mb-4 sm:mb-5"
         style={{ color: 'var(--theme-accent)' }}>
         Simulation Summary
       </p>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <BigStat label="Capital"   value={`₹${data.initial_capital.toLocaleString()}`} />
         <BigStat label="Available" value={`₹${data.available_capital.toLocaleString()}`} />
         <BigStat
@@ -302,7 +306,7 @@ function GlassTable({ headers, children }: { headers: string[]; children: React.
         backdropFilter: 'blur(20px) saturate(160%)',
       }}
     >
-      <table className="w-full">
+      <table className="w-full min-w-[600px]">
         <thead>
           <tr style={{ borderBottom: '1px solid var(--theme-glass-border)', background: 'var(--theme-glass-panel)' }}>
             {headers.map(h => (
@@ -349,7 +353,7 @@ function BigStat({ label, value, valueColor, glow }: {
         {label}
       </p>
       <p
-        className="font-display text-xl font-bold tabular-nums"
+        className="font-display text-base sm:text-xl font-bold tabular-nums"
         style={{ color: valueColor ?? 'var(--theme-text-primary)', textShadow: glow ?? 'none' }}
       >
         {value}
