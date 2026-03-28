@@ -12,7 +12,7 @@ export default function SettingsPage() {
 
       {/* ── Page header ─────────────────────────────────────────────────────── */}
       <div
-        className="shrink-0 px-8 py-6 relative overflow-hidden"
+        className="shrink-0 px-4 py-4 sm:px-8 sm:py-6 relative overflow-hidden"
         style={{ borderBottom: '1px solid var(--theme-glass-border)' }}
       >
         {/* Glow decoration */}
@@ -21,9 +21,9 @@ export default function SettingsPage() {
 
         <div className="relative flex items-center gap-4">
           {/* Icon box */}
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+          <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0"
             style={{ background: 'var(--theme-accent-soft)', border: '1px solid var(--theme-accent-border)', boxShadow: 'var(--theme-accent-glow)' }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-6 h-6"
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4 sm:w-6 sm:h-6"
               style={{ color: 'var(--theme-accent)' }}>
               <circle cx="12" cy="12" r="3" />
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -34,7 +34,7 @@ export default function SettingsPage() {
               style={{ color: 'var(--theme-accent)' }}>
               Preferences
             </p>
-            <h1 className="font-display text-3xl font-bold"
+            <h1 className="font-display text-xl sm:text-3xl font-bold"
               style={{ color: 'var(--theme-text-primary)' }}>
               Settings
             </h1>
@@ -43,8 +43,8 @@ export default function SettingsPage() {
       </div>
 
       {/* ── Content ─────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-2xl flex flex-col gap-8">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+        <div className="max-w-2xl flex flex-col gap-6 sm:gap-8">
 
           {/* ── Broker Connection ────────────────────────────────────────── */}
           <div>
