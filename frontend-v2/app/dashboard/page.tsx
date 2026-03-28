@@ -177,11 +177,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+    <main className="flex-1 min-w-0 flex flex-col overflow-y-auto sm:overflow-hidden">
 
       {/* ════════════════ HERO BANNER ════════════════════════════════════════ */}
       <div
-        className="shrink-0 px-8 py-7 relative overflow-hidden"
+        className="shrink-0 px-4 py-3 sm:px-8 sm:py-7 relative overflow-hidden"
         style={{ borderBottom: '1px solid var(--theme-glass-border)' }}
       >
         {/* Decorative accent glow — top-right */}
@@ -204,16 +204,16 @@ export default function DashboardPage() {
         <div className="relative flex items-center justify-between">
 
           {/* ── Title block ───────────────────────────────────────────────── */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 sm:gap-5">
             {/* Icon */}
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+              className="w-10 h-10 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0"
               style={{
                 background: 'var(--theme-accent-soft)',
                 border:     '1px solid var(--theme-accent-border)',
               }}
             >
-              <svg viewBox="0 0 28 28" fill="none" className="w-7 h-7">
+              <svg viewBox="0 0 28 28" fill="none" className="w-5 h-5 sm:w-7 sm:h-7">
                 <polyline
                   points="2,20 8,13 14,16 22,7"
                   stroke="var(--theme-accent)" strokeWidth="2.2"
@@ -232,13 +232,13 @@ export default function DashboardPage() {
             {/* Text */}
             <div>
               <h1
-                className="font-display text-4xl font-black tracking-tight leading-none"
+                className="font-display text-xl sm:text-4xl font-black tracking-tight leading-none"
                 style={{ color: 'var(--theme-text-primary)' }}
               >
                 TrendEdge
               </h1>
               <p
-                className="text-sm mt-1.5 font-medium"
+                className="hidden sm:block text-sm mt-1.5 font-medium"
                 style={{ color: 'var(--theme-text-muted)' }}
               >
                 Supertrend & ATR · Automated Trading Engine
@@ -247,17 +247,17 @@ export default function DashboardPage() {
           </div>
 
           {/* ── Right side: IST clock + WS status ────────────────────────── */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
 
-            {/* Live IST clock */}
-            <span className="font-mono text-sm tabular-nums" style={{ color: 'var(--theme-text-muted)' }}>
+            {/* Live IST clock — hidden on mobile */}
+            <span className="hidden sm:inline font-mono text-sm tabular-nums" style={{ color: 'var(--theme-text-muted)' }}>
               {istTime}
               <span className="ml-1 text-xs font-semibold" style={{ color: 'var(--theme-text-ghost)' }}>IST</span>
             </span>
 
             {/* WS Connected status */}
             <div
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+              className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl"
               style={{
                 background:     'var(--theme-glass-card)',
                 border:         `1px solid ${auth.wsConnected ? 'var(--theme-profit-border)' : 'var(--theme-glass-border)'}`,
@@ -271,7 +271,7 @@ export default function DashboardPage() {
                   boxShadow:  auth.wsConnected ? 'var(--theme-profit-glow)' : 'none',
                 }}
               />
-              <span className="text-sm font-semibold"
+              <span className="text-2xs sm:text-sm font-semibold"
                 style={{ color: auth.wsConnected ? 'var(--theme-profit)' : 'var(--theme-text-ghost)' }}>
                 {auth.wsConnected ? 'Connected' : 'Offline'}
               </span>
@@ -283,9 +283,9 @@ export default function DashboardPage() {
       </div>
 
       {/* ════════════════ COMBINED CONTROL STRIP ════════════════════════════ */}
-      <div className="shrink-0 px-6 pt-5 pb-5">
+      <div className="shrink-0 px-4 pt-4 pb-4 sm:px-6 sm:pt-5 sm:pb-5">
         <div
-          className="flex items-center w-full px-5 py-3.5 rounded-2xl"
+          className="flex flex-col sm:flex-row sm:items-center w-full px-4 sm:px-5 py-3 sm:py-3.5 rounded-2xl gap-3 sm:gap-0"
           style={{
             background:     'var(--theme-glass-card)',
             border:         '1px solid var(--theme-glass-border)',
@@ -295,7 +295,7 @@ export default function DashboardPage() {
         >
 
           {/* ══ LEFT GROUP — instrument controls ════════════════════════════════ */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
 
             {/* Symbol selector */}
             <SymbolSelector
@@ -303,7 +303,7 @@ export default function DashboardPage() {
               onSelect={handleSymbolSelect}
             />
 
-            <div className="w-px h-8 shrink-0" style={{ background: 'var(--theme-glass-border)' }} />
+            <div className="hidden sm:block w-px h-8 shrink-0" style={{ background: 'var(--theme-glass-border)' }} />
 
             {/* Timeframe selector */}
             <TimeframeSelector
@@ -312,7 +312,7 @@ export default function DashboardPage() {
               onSelect={handleSelectTf}
             />
 
-            <div className="w-px h-8 shrink-0" style={{ background: 'var(--theme-glass-border)' }} />
+            <div className="hidden sm:block w-px h-8 shrink-0" style={{ background: 'var(--theme-glass-border)' }} />
 
             {/* Indicators */}
             <button
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                 style={{ color: indOpen ? 'var(--theme-accent)' : 'var(--theme-text-muted)' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
               </svg>
-              <span className="text-[15px] font-semibold"
+              <span className="text-xs sm:text-[15px] font-semibold"
                 style={{ color: indOpen ? 'var(--theme-accent)' : 'var(--theme-text-primary)' }}>
                 Indicators
               </span>
@@ -337,13 +337,13 @@ export default function DashboardPage() {
           </div>
 
           {/* ══ SPACER — pushes right group to the edge ══════════════════════════ */}
-          <div className="flex-1" />
+          <div className="hidden sm:block flex-1" />
 
           {/* ══ CENTER DIVIDER ═══════════════════════════════════════════════════ */}
-          <div className="w-px h-8 shrink-0 mx-4" style={{ background: 'var(--theme-glass-border-strong)' }} />
+          <div className="hidden sm:block w-px h-8 shrink-0 mx-4" style={{ background: 'var(--theme-glass-border-strong)' }} />
 
           {/* ══ RIGHT GROUP — engine controls ════════════════════════════════════ */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
 
             {/* Mode toggle */}
             <div
@@ -378,17 +378,17 @@ export default function DashboardPage() {
               </ModeBtn>
             </div>
 
-            <div className="w-px h-8 shrink-0" style={{ background: 'var(--theme-glass-border)' }} />
+            <div className="hidden sm:block w-px h-8 shrink-0" style={{ background: 'var(--theme-glass-border)' }} />
 
             {/* Quantity — shows "Qty" when empty, "Qty 5" when a value is set */}
             <div
-              className="flex items-center gap-2 h-11 px-5 rounded-xl shrink-0 cursor-text"
+              className="flex items-center gap-1 sm:gap-2 h-9 sm:h-11 px-3 sm:px-5 rounded-xl shrink-0 cursor-text"
               style={{
                 background: 'var(--theme-input-bg)',
                 border:     '1px solid var(--theme-input-border)',
               }}
             >
-              <span className="text-[15px] font-semibold select-none" style={{ color: 'var(--theme-text-muted)' }}>
+              <span className="text-xs sm:text-[15px] font-semibold select-none" style={{ color: 'var(--theme-text-muted)' }}>
                 Qty
               </span>
               <input
@@ -400,7 +400,7 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="w-px h-8 shrink-0" style={{ background: 'var(--theme-glass-border)' }} />
+            <div className="hidden sm:block w-px h-8 shrink-0" style={{ background: 'var(--theme-glass-border)' }} />
 
             {/* Engine controls */}
             <div className="flex items-center gap-2.5">
@@ -408,7 +408,7 @@ export default function DashboardPage() {
                 <button
                   onClick={handleStart}
                   disabled={!sym || !engine.selectedTimeframe}
-                  className="h-11 px-7 rounded-xl text-[15px] font-black tracking-wide transition-all active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="h-9 sm:h-11 px-4 sm:px-7 rounded-xl text-xs sm:text-[15px] font-black tracking-wide transition-all active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
                   style={{
                     background: 'var(--theme-profit)',
                     color:      '#fff',
@@ -423,7 +423,7 @@ export default function DashboardPage() {
                   {engineState === 'RUNNING' ? (
                     <button
                       onClick={pauseEngine}
-                      className="h-11 px-6 rounded-xl text-[15px] font-bold transition-colors"
+                      className="h-9 sm:h-11 px-3 sm:px-6 rounded-xl text-xs sm:text-[15px] font-bold transition-colors"
                       style={{
                         background: 'var(--theme-warn-bg)',
                         border:     '1px solid var(--theme-warn-border)',
@@ -435,7 +435,7 @@ export default function DashboardPage() {
                   ) : (
                     <button
                       onClick={resumeEngine}
-                      className="h-11 px-6 rounded-xl text-[15px] font-bold transition-colors"
+                      className="h-9 sm:h-11 px-3 sm:px-6 rounded-xl text-xs sm:text-[15px] font-bold transition-colors"
                       style={{
                         background: 'var(--theme-profit-bg)',
                         border:     '1px solid var(--theme-profit-border)',
@@ -447,7 +447,7 @@ export default function DashboardPage() {
                   )}
                   <button
                     onClick={stopEngine}
-                    className="h-11 px-6 rounded-xl text-[15px] font-bold transition-colors"
+                    className="h-9 sm:h-11 px-3 sm:px-6 rounded-xl text-xs sm:text-[15px] font-bold transition-colors"
                     style={{
                       background: 'var(--theme-loss-bg)',
                       border:     '1px solid var(--theme-loss-border)',
@@ -465,7 +465,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ════════════════ LIVE DATA CARDS ════════════════════════════════════ */}
-      <div className="shrink-0 px-6 pb-5 grid grid-cols-3 gap-4">
+      <div className="shrink-0 px-4 pb-3 sm:px-6 sm:pb-5 grid grid-cols-3 gap-2 sm:gap-4">
 
         {/* Price */}
         <LiveCard
@@ -525,7 +525,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ════════════════ EXIT CONDITIONS ════════════════════════════════════ */}
-      <div className="shrink-0 px-6 pb-4">
+      <div className="shrink-0 px-4 pb-4 sm:px-6">
         <ExitSettingsCard
           settings={exitSettings}
           onChange={(patch) => {
@@ -537,13 +537,13 @@ export default function DashboardPage() {
       </div>
 
       {/* ════════════════ SCROLLABLE CONTENT ════════════════════════════════ */}
-      <div className="flex-1 overflow-y-auto px-5 pt-6 pb-5 flex flex-col gap-4">
+      <div className="sm:flex-1 sm:overflow-y-auto px-4 pt-4 pb-4 sm:px-5 sm:pt-6 sm:pb-5 flex flex-col gap-4">
 
         {/* Open Position */}
         <div
           className="glass-card rounded-2xl p-5"
         >
-          <p className="text-2xs font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--theme-text-ghost)' }}>
+          <p className="text-2xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--theme-text-ghost)' }}>
             Open Position
           </p>
 
@@ -551,7 +551,7 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <p className="font-display text-base font-bold" style={{ color: 'var(--theme-text-primary)' }}>
+                  <p className="font-display text-sm sm:text-base font-bold" style={{ color: 'var(--theme-text-primary)' }}>
                     {pos.symbol}
                   </p>
                   <p className="text-xs mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>
@@ -560,7 +560,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-right">
                   <p
-                    className="font-display text-3xl font-bold tabular-nums leading-none"
+                    className="font-display text-xl sm:text-3xl font-bold tabular-nums leading-none"
                     style={{
                       color:      pos.unrealized_pnl >= 0 ? 'var(--theme-profit)' : 'var(--theme-loss)',
                       textShadow: pos.unrealized_pnl >= 0 ? 'var(--theme-profit-glow)' : 'var(--theme-loss-glow)',
@@ -615,7 +615,7 @@ function ModeBtn({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[14px] font-bold transition-all disabled:cursor-not-allowed"
+      className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-[14px] font-bold transition-all disabled:cursor-not-allowed"
       style={{
         color:      active ? activeColor                        : 'var(--theme-text-ghost)',
         background: active ? activeBg                          : 'transparent',
@@ -643,7 +643,7 @@ function LiveCard({
 }) {
   return (
     <div
-      className="rounded-2xl px-5 py-5 flex flex-col relative overflow-hidden"
+      className="rounded-xl sm:rounded-2xl px-3 py-3 sm:px-5 sm:py-5 flex flex-col relative overflow-hidden"
       style={{
         background:     bg,
         border:         `1px solid ${borderColor}`,
@@ -657,16 +657,16 @@ function LiveCard({
       />
 
       <div className="pl-3 flex flex-col gap-2.5">
-        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--theme-text-ghost)' }}>
+        <p className="text-2xs sm:text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--theme-text-ghost)' }}>
           {label}
         </p>
         <p
-          className="text-2xl font-bold tabular-nums font-mono leading-none"
+          className="text-sm sm:text-2xl font-bold tabular-nums font-mono leading-none"
           style={{ color: valueColor }}
         >
           {value}
         </p>
-        {tag && <div>{tag}</div>}
+        {tag && <div className="hidden sm:block">{tag}</div>}
       </div>
     </div>
   )
@@ -709,7 +709,7 @@ function ExitSettingsCard({
 
   return (
     <div
-      className="rounded-2xl px-5 py-4 flex items-center gap-0"
+      className="rounded-2xl px-3 sm:px-5 py-3 sm:py-4 flex flex-wrap sm:flex-nowrap items-start sm:items-center gap-2 sm:gap-0"
       style={{
         background:     'var(--theme-glass-card)',
         border:         '1px solid var(--theme-glass-border)',
@@ -826,7 +826,7 @@ function ExitSettingsCard({
           value={draft.session_end_time}
           onChange={e => setDraft(d => ({ ...d, session_end_time: e.target.value }))}
           onBlur={commitTime}
-          className="h-8 w-24 rounded-lg px-2 text-sm font-mono font-bold focus:outline-none"
+          className="h-7 sm:h-8 w-20 sm:w-24 rounded-lg px-2 text-xs sm:text-sm font-mono font-bold focus:outline-none"
           style={{
             background:  'var(--theme-input-bg)',
             border:      '1px solid var(--theme-input-border)',
@@ -848,7 +848,7 @@ function ExitGroup({ label, color, children }: {
   children: React.ReactNode
 }) {
   return (
-    <div className="flex-1 flex flex-col px-4 py-1">
+    <div className="w-[calc(50%-4px)] sm:w-auto sm:flex-1 flex flex-col px-2 sm:px-4 py-1">
       <p className="text-2xs font-bold uppercase tracking-widest mb-2.5" style={{ color }}>
         {label}
       </p>
@@ -882,7 +882,7 @@ function ExitInput({ value, unit, onChange, onBlur, color, disabled }: {
         disabled={disabled}
         onChange={e => onChange(e.target.value)}
         onBlur={onBlur}
-        className="w-14 bg-transparent text-sm font-mono font-bold focus:outline-none"
+        className="w-10 sm:w-14 bg-transparent text-xs sm:text-sm font-mono font-bold focus:outline-none"
         style={{ color }}
       />
       <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--theme-text-ghost)' }}>
@@ -896,7 +896,7 @@ function ExitInput({ value, unit, onChange, onBlur, color, disabled }: {
 
 function ColDivider() {
   return (
-    <div className="w-px self-stretch shrink-0 mx-1"
+    <div className="hidden sm:block w-px self-stretch shrink-0 mx-1"
       style={{ background: 'var(--theme-glass-border)' }} />
   )
 }
