@@ -96,7 +96,7 @@ export default function LogsPage() {
               backdropFilter: 'blur(20px) saturate(160%)',
             }}
           >
-            <div className="font-mono text-xs">
+            <div className="font-mono text-[10px] sm:text-xs">
               {logs.map((log, i) => {
                 const msgColor =
                   log.level === 'ERROR'   ? 'var(--theme-loss)'         :
@@ -129,7 +129,7 @@ export default function LogsPage() {
 
                     {/* Level badge */}
                     <span
-                      className="shrink-0 w-16 font-bold text-center px-1.5 py-0.5 rounded text-2xs self-start"
+                      className="shrink-0 w-12 sm:w-16 font-bold text-center px-1 sm:px-1.5 py-0.5 rounded text-[9px] sm:text-2xs self-start"
                       style={
                         log.level === 'ERROR' ? {
                           color: 'var(--theme-loss)', background: 'var(--theme-loss-bg)', border: '1px solid var(--theme-loss-border)',
@@ -152,7 +152,7 @@ export default function LogsPage() {
                     </span>
 
                     {/* Message */}
-                    <span className="flex-1 leading-relaxed" style={{ color: msgColor }}>
+                    <span className="flex-1 leading-relaxed break-all sm:break-normal" style={{ color: msgColor }}>
                       {log.message}
                     </span>
                   </div>

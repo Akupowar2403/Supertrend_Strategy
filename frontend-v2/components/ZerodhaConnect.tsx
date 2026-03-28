@@ -137,7 +137,7 @@ export function ZerodhaConnect() {
         style={{ background: 'var(--theme-glass-card)', border: '1px solid var(--theme-glass-border)' }}
       >
         {/* Header row */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
             {/* Green status dot */}
             <div className="relative shrink-0">
@@ -163,7 +163,7 @@ export function ZerodhaConnect() {
           <button
             onClick={handleDisconnect}
             disabled={disconnecting}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+            className="flex items-center justify-center gap-2 w-full sm:w-auto px-3 py-2 sm:py-1.5 rounded-xl text-xs font-semibold transition-all"
             style={{
               background: 'var(--theme-loss-bg)',
               border:     '1px solid var(--theme-loss-border)',
@@ -231,7 +231,7 @@ export function ZerodhaConnect() {
           Your credentials were saved. You can connect manually via Zerodha's login page.
         </p>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => { if (loginUrl) window.location.href = loginUrl }}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"

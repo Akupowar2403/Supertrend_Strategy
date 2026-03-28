@@ -71,7 +71,7 @@ export default function SettingsPage() {
               Colors update instantly across the entire interface.
             </p>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
               {THEMES.map(theme => (
                 <ThemeSwatch
                   key={theme.id}
@@ -104,7 +104,7 @@ function ThemeSwatch({
   return (
     <button
       onClick={onSelect}
-      className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-150 focus:outline-none"
+      className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 rounded-xl transition-all duration-150 focus:outline-none w-full sm:w-auto"
       style={{
         background: active ? theme.glass.card        : 'var(--theme-glass-card)',
         border:     active
