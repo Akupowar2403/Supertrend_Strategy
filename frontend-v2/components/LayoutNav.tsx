@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuth }     from '@/store/AuthStore'
 import { logoutUser }  from '@/lib/api'
 
+
 const NAV = [
   {
     href:        '/dashboard',
@@ -57,7 +58,7 @@ const NAV = [
   {
     href:        '/dashboard/settings',
     label:       'Settings',
-    description: 'Theme & preferences',
+    description: 'Theme & broker login',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-5 h-5 shrink-0">
         <circle cx="12" cy="12" r="3" />
@@ -210,12 +211,6 @@ export function LayoutNav() {
               style={{ color: 'var(--theme-text-primary)' }}
             >
               {auth.userName || 'User'}
-            </p>
-            <p
-              className="text-2xs mt-0.5"
-              style={{ color: 'var(--theme-text-muted)' }}
-            >
-              Trader
             </p>
           </div>
         </div>

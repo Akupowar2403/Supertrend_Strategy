@@ -9,6 +9,7 @@
 //   3. Every component reads those CSS vars — no component ever hard-codes colors.
 //   4. Switching theme = update state + localStorage + re-run applyTheme().
 //
+
 // Components consume via:
 //   const { theme, themeId, setThemeId } = useTheme()
 //   style={{ color: 'var(--theme-text-primary)' }}

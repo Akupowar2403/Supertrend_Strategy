@@ -29,6 +29,8 @@ import type {
   TickerStatus,
   Exchange,
   InstrumentType,
+  ZerodhaStatus,
+  ZerodhaCredentialsResponse,
 } from '@/types/types'
 
 // ── Axios instance ────────────────────────────────────────────────────────────
@@ -186,5 +188,39 @@ export async function getFunds(): Promise<FundsResponse> {
  */
 export async function getTickerStatus(): Promise<TickerStatus> {
   const res = await api.get<TickerStatus>('/ticker/status')
+  return res.data
+}
+
+// ── Zerodha Connection ────────────────────────────────────────────────────────
+
+/**
+ * Fetch detailed Zerodha connection status from DB.
+ * Returns whether connected, has_credentials, user info, last login time.
+ */
+export async function getZerodhaStatus(): Promise<ZerodhaStatus> {
+  const res = await api.get<ZerodhaStatus>('/api/zerodha/status')
+  return res.data
+}
+
+/**
+ * Save Zerodha credentials encrypted to DB and attempt TOTP auto-login.
+ * If TOTP fails, response contains login_url for OAuth fallback.
+ */
+export async function saveZerodhaCredentials(creds: {
+  api_key:    string
+  api_secret: string
+  user_id:    string
+  password:   string
+  totp_key:   string
+}): Promise<ZerodhaCredentialsResponse> {
+  const res = await api.post<ZerodhaCredentialsResponse>('/api/zerodha/credentials', creds)
+  return res.data
+}
+
+/**
+ * Get Kite OAuth login URL — used as fallback when TOTP fails.
+ */
+export async function getZerodhaLoginUrl(): Promise<{ url: string }> {
+  const res = await api.get<{ url: string }>('/api/zerodha/login-url')
   return res.data
 }

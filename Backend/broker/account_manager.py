@@ -5,7 +5,7 @@ Flow:
   add_account()             → encrypt credentials → save to DB
   login_account()           → decrypt → TOTP login → save access_token to DB
   load_and_autologin_all()  → on server start, auto-login all active TOTP accounts
-  disconnect_account()      → clear access_token from DB on logout
+  disconnect_account()      → wipe access_token + all credentials from DB on logout
 """
 
 from datetime import datetime
@@ -129,10 +129,16 @@ async def load_and_autologin_all(db: AsyncSession) -> dict:
 
 
 async def disconnect_account(db: AsyncSession, account_id: str) -> None:
-    """Clear access_token from DB on logout."""
+    """Clear access_token AND all credentials from DB on logout."""
     await db.execute(
         update(Account)
         .where(Account.id == account_id)
-        .values(access_token=None, is_connected=False)
+        .values(
+            access_token=None,
+            is_connected=False,
+            api_secret_encrypted=None,
+            password_encrypted=None,
+            totp_key_encrypted=None,
+        )
     )
     await db.commit()

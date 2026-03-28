@@ -367,6 +367,24 @@ export interface FundsResponse {
   net:          number
 }
 
+export interface ZerodhaStatus {
+  connected:       boolean
+  has_credentials: boolean
+  user_name?:      string
+  user_id?:        string
+  auth_method?:    string
+  last_login_at?:  string | null
+}
+
+export interface ZerodhaCredentialsResponse {
+  success:    boolean
+  connected:  boolean
+  user_name?: string
+  user_id?:   string
+  login_url?: string
+  error?:     string
+}
+
 
 // ── INTERNAL TYPES ────────────────────────────────────────────────────────────
 

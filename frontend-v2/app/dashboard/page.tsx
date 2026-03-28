@@ -41,9 +41,10 @@ export default function DashboardPage() {
   const { state: market }                                       = useMarket()
   const { setTrades }                                           = useTrade()
 
-  const [qtyInput, setQtyInput] = useState('')
-  const [indOpen,  setIndOpen]  = useState(false)
-  const [istTime,  setIstTime]  = useState('')
+  const [qtyInput,     setQtyInput]     = useState('')
+  const [indOpen,      setIndOpen]      = useState(false)
+  const [istTime,      setIstTime]      = useState('')
+  const [initialized,  setInitialized]  = useState(false)
 
   useEffect(() => {
     function tick() {
@@ -104,6 +105,7 @@ export default function DashboardPage() {
         if (tfs.length > 0 && !engine.selectedTimeframe) setTimeframe(tfs[0])
       } catch (e) { console.error('timeframes:', e) }
       try { setTrades(await getTrades()) } catch (e) { console.error('trades:', e) }
+      setInitialized(true)
     }
     init()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,6 +159,22 @@ export default function DashboardPage() {
     : isRed
     ? 'var(--theme-loss)'
     : 'var(--theme-text-primary)'
+
+  if (!initialized) {
+    return (
+      <main className="flex-1 min-w-0 flex flex-col overflow-hidden items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div
+            className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: 'var(--theme-accent-border)', borderTopColor: 'transparent' }}
+          />
+          <p className="text-sm font-medium" style={{ color: 'var(--theme-text-muted)' }}>
+            Loading…
+          </p>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="flex-1 min-w-0 flex flex-col overflow-hidden">

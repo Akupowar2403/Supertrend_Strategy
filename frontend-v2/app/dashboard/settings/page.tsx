@@ -2,6 +2,7 @@
 
 import { THEMES, type Theme, type ThemeId } from '@/lib/themes'
 import { useTheme } from '@/store/ThemeStore'
+import { ZerodhaConnect } from '@/components/ZerodhaConnect'
 
 export default function SettingsPage() {
   const { themeId, setThemeId } = useTheme()
@@ -44,6 +45,20 @@ export default function SettingsPage() {
       {/* ── Content ─────────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-2xl flex flex-col gap-8">
+
+          {/* ── Broker Connection ────────────────────────────────────────── */}
+          <div>
+            <p className="text-sm font-bold mb-1"
+              style={{ color: 'var(--theme-text-primary)' }}>
+              Broker Connection
+            </p>
+            <p className="text-xs mb-4"
+              style={{ color: 'var(--theme-text-muted)' }}>
+              Connect your Zerodha account. Credentials are encrypted in the database.
+              Auto-login runs daily at 8:30 AM. Logout wipes all stored credentials.
+            </p>
+            <ZerodhaConnect />
+          </div>
 
           {/* ── Appearance ──────────────────────────────────────────────────── */}
           <div>

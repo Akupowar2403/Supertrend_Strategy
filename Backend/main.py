@@ -62,7 +62,7 @@ from models.trade_log import set_loop as set_trade_log_loop, get_trade_logs
 from models.account import Account
 from models.timeframe import Timeframe
 from models.database import async_session, init_db
-from broker.account_manager import load_and_autologin_all, disconnect_account
+from broker.account_manager import load_and_autologin_all, disconnect_account, login_account
 from broker.instruments import refresh_instruments
 from api.routes_market import router as market_router
 from api.routes_trades import router as trades_router
@@ -510,6 +510,133 @@ async def ticker_unsubscribe(request: Request):
     tokens: list[int] = body.get("tokens", [])
     zeroda.unsubscribe(tokens)
     return {"unsubscribed": tokens, "ticker": zeroda.ticker_status()}
+
+
+# ── Zerodha credential management ────────────────────────────────────────────
+
+@fastapi_app.get("/api/zerodha/status")
+async def zerodha_status():
+    """Returns Zerodha connection status + whether credentials exist in DB."""
+    async with async_session() as db:
+        result = await db.execute(
+            select(Account).where(Account.is_active == True)
+        )
+        account = result.scalars().first()
+
+    if not account:
+        return {"connected": False, "has_credentials": False}
+
+    has_credentials = bool(account.password_encrypted and account.totp_key_encrypted)
+
+    if account.is_connected and account.access_token:
+        valid, info = zeroda.verify_token(account.access_token)
+        if valid:
+            return {
+                "connected":       True,
+                "has_credentials": has_credentials,
+                "user_name":       info.get("user_name"),
+                "user_id":         info.get("user_id"),
+                "auth_method":     account.auth_method,
+                "last_login_at":   account.last_login_at.isoformat() if account.last_login_at else None,
+            }
+
+    return {
+        "connected":       False,
+        "has_credentials": has_credentials,
+        "user_id":         account.user_id if account.user_id else None,
+    }
+
+
+@fastapi_app.post("/api/zerodha/credentials")
+async def save_zerodha_credentials(request: Request):
+    """
+    Save Zerodha credentials encrypted to DB, then attempt TOTP auto-login.
+    On TOTP failure returns OAuth login_url so frontend can redirect.
+    """
+    global _access_token
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON"}, status_code=400)
+
+    api_key    = (body.get("api_key")    or "").strip()
+    api_secret = (body.get("api_secret") or "").strip()
+    user_id    = (body.get("user_id")    or "").strip()
+    password   = (body.get("password")   or "").strip()
+    totp_key   = (body.get("totp_key")   or "").strip()
+
+    if not all([api_key, api_secret, user_id, password, totp_key]):
+        return JSONResponse({"error": "All fields are required"}, status_code=400)
+
+    from config.crypto import encrypt as _encrypt
+
+    async with async_session() as db:
+        result = await db.execute(select(Account).where(Account.user_id == user_id))
+        account = result.scalars().first()
+
+        if account:
+            account.api_key              = api_key
+            account.api_secret_encrypted = _encrypt(api_secret)
+            account.password_encrypted   = _encrypt(password)
+            account.totp_key_encrypted   = _encrypt(totp_key)
+            account.auth_method          = "totp"
+            account.is_active            = True
+        else:
+            account = Account(
+                label                = user_id,
+                user_id              = user_id,
+                api_key              = api_key,
+                api_secret_encrypted = _encrypt(api_secret),
+                password_encrypted   = _encrypt(password),
+                totp_key_encrypted   = _encrypt(totp_key),
+                auth_method          = "totp",
+                is_active            = True,
+                is_connected         = False,
+            )
+            db.add(account)
+        await db.commit()
+        await db.refresh(account)
+
+        # Patch zeroda module globals so login_account uses the new credentials
+        zeroda.API_KEY      = api_key
+        zeroda.API_SECRET   = api_secret
+        zeroda.USER_ID      = user_id
+        zeroda.PASSWORD     = password
+        zeroda.TOTP_KEY     = totp_key
+        zeroda.kite.api_key = api_key
+
+        try:
+            access_token  = await login_account(db, account.id)
+            _access_token = access_token
+            zeroda.init_ticker(access_token)
+
+            try:
+                await refresh_instruments(zeroda.kite, db)
+            except Exception as exc:
+                log.warning("credentials: instrument refresh failed: %s", exc)
+
+            profile = zeroda.kite.profile()
+            return {
+                "success":   True,
+                "connected": True,
+                "user_name": profile.get("user_name"),
+                "user_id":   profile.get("user_id"),
+            }
+        except Exception as exc:
+            log.warning("credentials: TOTP login failed: %s", exc)
+            return {
+                "success":   False,
+                "connected": False,
+                "login_url": zeroda.get_login_url(),
+                "error":     str(exc),
+            }
+
+
+@fastapi_app.get("/api/zerodha/login-url")
+async def zerodha_login_url():
+    """Returns the Kite OAuth login URL for manual browser-based login."""
+    return {"url": zeroda.get_login_url()}
 
 
 @fastapi_app.get("/ticker/ticks")
