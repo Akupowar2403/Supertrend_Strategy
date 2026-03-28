@@ -57,19 +57,19 @@ export default function TradesPage() {
 
       {/* ── Page header ───────────────────────────────────────────────────── */}
       <div
-        className="shrink-0 px-8 py-6 relative overflow-hidden"
+        className="shrink-0 px-4 py-4 sm:px-8 sm:py-6 relative overflow-hidden"
         style={{ borderBottom: '1px solid var(--theme-glass-border)' }}
       >
         {/* Glow decoration */}
         <div className="absolute -top-6 -left-6 w-40 h-40 rounded-full pointer-events-none"
           style={{ background: 'var(--theme-accent-soft)', filter: 'blur(40px)', opacity: 0.6 }} />
 
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
             {/* Icon box */}
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0"
               style={{ background: 'var(--theme-accent-soft)', border: '1px solid var(--theme-accent-border)', boxShadow: 'var(--theme-accent-glow)' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-6 h-6"
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4 sm:w-6 sm:h-6"
                 style={{ color: 'var(--theme-accent)' }}>
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <path d="M3 9h18M9 21V9" />
@@ -80,15 +80,15 @@ export default function TradesPage() {
                 style={{ color: 'var(--theme-accent)' }}>
                 History
               </p>
-              <h1 className="font-display text-3xl font-bold"
+              <h1 className="font-display text-xl sm:text-3xl font-bold"
                 style={{ color: 'var(--theme-text-primary)' }}>
                 Trade Log
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <span
-              className="text-xs font-bold px-3 py-1.5 rounded-full"
+              className="text-xs font-bold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full"
               style={brokerMode === 'live' ? {
                 color: 'var(--theme-loss)', background: 'var(--theme-loss-bg)', border: '1px solid var(--theme-loss-border)',
               } : {
@@ -120,13 +120,13 @@ export default function TradesPage() {
       </div>
 
       {/* ── Stat cards ────────────────────────────────────────────────────── */}
-      <div className="shrink-0 px-6 py-4 relative overflow-hidden"
+      <div className="shrink-0 px-4 py-3 sm:px-6 sm:py-4 relative overflow-hidden"
         style={{ borderBottom: '1px solid var(--theme-glass-border)' }}>
         {/* Blue sprinkle glow — top-right, like dashboard hero */}
         <div className="absolute -top-8 right-16 w-64 h-20 rounded-full pointer-events-none"
           style={{ background: 'var(--theme-accent)', filter: 'blur(48px)', opacity: 0.18 }} />
 
-        <div className="relative grid grid-cols-4 gap-4">
+        <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
           <StatCard label="Total Trades"  value={String(trades.length)}
             valueColor="var(--theme-text-primary)" />
           <StatCard label="Win Rate"      value={`${winRate}%`}
@@ -146,7 +146,7 @@ export default function TradesPage() {
       </div>
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-hidden p-6">
+      <div className="flex-1 overflow-hidden p-3 sm:p-6">
         {loading ? (
           <Skeleton />
         ) : activeTab === 'activity' ? (
@@ -208,7 +208,7 @@ function ActivityFeed({
         backdropFilter: 'blur(20px) saturate(160%)',
       }}
     >
-      <table className="w-full border-collapse">
+      <table className="w-full border-collapse min-w-[600px]">
         <thead>
           <tr style={{ background: 'var(--theme-glass-panel)', borderBottom: '1px solid var(--theme-glass-border)' }}>
             {['Time', 'Event', 'Symbol', 'Mode', 'Details'].map(h => (
@@ -309,7 +309,7 @@ function CompletedTradesTable({ trades }: { trades: Trade[] }) {
         backdropFilter: 'blur(20px) saturate(160%)',
       }}
     >
-      <table className="w-full">
+      <table className="w-full min-w-[800px]">
         <thead>
           <tr style={{ borderBottom: '1px solid var(--theme-glass-border)', background: 'var(--theme-glass-panel)' }}>
             {['Symbol', 'Mode', 'Interval', 'Qty', 'Entry', 'Exit', 'Points', 'P&L', 'Result', 'Reason', 'Time'].map(h => (
@@ -396,7 +396,7 @@ function StatCard({ label, value, valueColor, glow, accentBg, accentBorder, prof
 
   return (
     <div
-      className="rounded-2xl px-6 py-5"
+      className="rounded-xl sm:rounded-2xl px-4 py-3 sm:px-6 sm:py-5"
       style={{
         background:     bg,
         border:         `1px solid ${border}`,
@@ -409,7 +409,7 @@ function StatCard({ label, value, valueColor, glow, accentBg, accentBorder, prof
         {label}
       </p>
       <p
-        className="font-display text-2xl font-bold tabular-nums"
+        className="font-display text-lg sm:text-2xl font-bold tabular-nums"
         style={{ color: valueColor, textShadow: glow ?? 'none' }}
       >
         {value}

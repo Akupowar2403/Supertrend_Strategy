@@ -18,7 +18,7 @@ export default function LogsPage() {
 
       {/* ── Page header ───────────────────────────────────────────────────── */}
       <div
-        className="shrink-0 px-8 py-6 relative overflow-hidden"
+        className="shrink-0 px-4 py-4 sm:px-8 sm:py-6 relative overflow-hidden"
         style={{ borderBottom: '1px solid var(--theme-glass-border)' }}
       >
         {/* Glow decoration */}
@@ -28,9 +28,9 @@ export default function LogsPage() {
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Icon box */}
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+            <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0"
               style={{ background: 'var(--theme-accent-soft)', border: '1px solid var(--theme-accent-border)', boxShadow: 'var(--theme-accent-glow)' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-6 h-6"
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="w-4 h-4 sm:w-6 sm:h-6"
                 style={{ color: 'var(--theme-accent)' }}>
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
@@ -44,7 +44,7 @@ export default function LogsPage() {
                 style={{ color: 'var(--theme-accent)' }}>
                 System
               </p>
-              <h1 className="font-display text-3xl font-bold"
+              <h1 className="font-display text-xl sm:text-3xl font-bold"
                 style={{ color: 'var(--theme-text-primary)' }}>
                 Logs
               </h1>
@@ -57,13 +57,13 @@ export default function LogsPage() {
       </div>
 
       {/* ── Level cards ───────────────────────────────────────────────────── */}
-      <div className="shrink-0 px-6 py-4 relative overflow-hidden"
+      <div className="shrink-0 px-3 py-3 sm:px-6 sm:py-4 relative overflow-hidden"
         style={{ borderBottom: '1px solid var(--theme-glass-border)' }}>
         {/* Blue sprinkle glow */}
         <div className="absolute -top-8 right-16 w-64 h-20 rounded-full pointer-events-none"
           style={{ background: 'var(--theme-accent)', filter: 'blur(48px)', opacity: 0.18 }} />
 
-        <div className="relative grid grid-cols-4 gap-4">
+        <div className="relative grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
           <LevelCard label="Errors"   count={counts.ERROR}
             color="var(--theme-loss)"       bg="var(--theme-loss-bg)"     border="var(--theme-loss-border)"   barBg="var(--theme-loss-bg)"    barBorder="var(--theme-loss-border)" />
           <LevelCard label="Warnings" count={counts.WARNING}
@@ -76,7 +76,7 @@ export default function LogsPage() {
       </div>
 
       {/* ── Log stream ────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-3 sm:p-6">
         {logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3 text-center">
             <span className="text-5xl" style={{ color: 'var(--theme-text-ghost)' }}>◎</span>
@@ -111,7 +111,7 @@ export default function LogsPage() {
                 return (
                   <div
                     key={i}
-                    className="flex gap-4 px-5 py-2.5 transition-colors"
+                    className="flex gap-2 sm:gap-4 px-3 sm:px-5 py-2 sm:py-2.5 transition-colors"
                     style={{
                       background:   rowBg,
                       borderBottom: i < logs.length - 1 ? '1px solid var(--theme-glass-border)' : 'none',
@@ -122,7 +122,7 @@ export default function LogsPage() {
                     onMouseLeave={e => { e.currentTarget.style.background = rowBg }}
                   >
                     {/* Timestamp */}
-                    <span className="shrink-0 tabular-nums w-24"
+                    <span className="hidden sm:inline shrink-0 tabular-nums w-24"
                       style={{ color: 'var(--theme-text-ghost)' }}>
                       {log.timestamp.slice(0, 19).replace('T', ' ')}
                     </span>
@@ -146,7 +146,7 @@ export default function LogsPage() {
                     </span>
 
                     {/* Logger */}
-                    <span className="shrink-0 w-28 truncate"
+                    <span className="hidden sm:inline shrink-0 w-28 truncate"
                       style={{ color: 'var(--theme-text-ghost)' }}>
                       {log.logger}
                     </span>
@@ -179,7 +179,7 @@ function LevelCard({ label, count, color, bg, border, barBg, barBorder }: {
 }) {
   return (
     <div
-      className="rounded-2xl px-6 py-5"
+      className="rounded-2xl px-4 py-3 sm:px-6 sm:py-5"
       style={{
         background:     bg,
         border:         `1px solid ${border}`,
@@ -190,7 +190,7 @@ function LevelCard({ label, count, color, bg, border, barBg, barBorder }: {
         style={{ color: 'var(--theme-text-muted)' }}>
         {label}
       </p>
-      <p className="font-display text-2xl font-bold tabular-nums"
+      <p className="font-display text-xl sm:text-2xl font-bold tabular-nums"
         style={{ color }}>
         {count}
       </p>
