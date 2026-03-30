@@ -226,8 +226,15 @@ function ActivityFeed({
               bg: 'var(--theme-glass-panel)', border: 'var(--theme-glass-border)',
             }
             const d       = entry.details as Record<string, unknown>
-            const dateStr = entry.created_at?.slice(0, 10) ?? '—'
-            const timeStr = entry.created_at?.slice(11, 19) ?? '—'
+            const istDate = entry.created_at
+              ? new Date(entry.created_at.endsWith('Z') ? entry.created_at : entry.created_at + 'Z')
+              : null
+            const dateStr = istDate
+              ? istDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+              : '—'
+            const timeStr = istDate
+              ? istDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+              : '—'
 
             const detailStr = Object.entries(d)
               .filter(([, v]) => v !== null && v !== undefined && v !== '')
